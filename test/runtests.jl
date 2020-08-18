@@ -30,9 +30,19 @@ using MLFS.HM
 
         h :: (((a -> a) where a) -> (Int, Str))
         h = f -> (f(1), f("1"))
+
+        id :: ((a -> a) where a)
+        id = x -> x
+
+        choose :: ((a -> a -> a) where a)
+        choose = x -> y -> x
+
+        choose_id = choose(id)
     end
     pprintln([f() for f in MLFS.inferDecls(g, l, stmts)[1]])
     for (i, each) in enumerate(g.tcstate.tctx)
         println(i, ": ", each)
     end
+
+
 end
