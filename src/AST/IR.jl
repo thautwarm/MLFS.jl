@@ -1,16 +1,15 @@
 export IR
 module IR
 using MLStyle
-import HMRowUnification
-using HMRowUnification: HMT
+using MLFS.HM: HMT
+import MLFS.HM
 
-
-TForall = HMRowUnification.Forall
-TApp = HMRowUnification.App
-TArrow = HMRowUnification.Arrow
-TTuple = HMRowUnification.Tup
-TVar = HMRowUnification.Var
-TFresh = HMRowUnification.Fresh
+TForall = HM.Forall
+TApp = HM.App
+TArrow = HM.Arrow
+TTuple = HM.Tup
+TVar = HM.Var
+TFresh = HM.Fresh
 abstract type ExprImpl end
 
 struct Expr
@@ -38,7 +37,10 @@ FloatType = Union{Float16, Float32, Float64}
     EInt(IntType)
     EFloat(FloatType)
     EStr(String)
+    EChar(Char)
     EBool(Bool)
     EInst(HMT)
+    # specialization
+    ETApp(Expr, Vector{Pair{Symbol, HMT}})
 end
 end # module

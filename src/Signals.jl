@@ -1,6 +1,13 @@
-export UnboundTypeVar, InvalidSyntax, RecursiveType, UnificationFail
-export TypePartialOrderError, TypeVarEscape, PrincipalTypeSearchError, NoError
 export Signal, MLError
+export UnboundTypeVar, UnboundVar
+export UnusedAnnotation, InvalidSyntax
+export DuplicateDeclaration, DuplicateInstanceError
+export InstanceNotFound
+
+export RecursiveType
+export UnificationFail, NoError
+export TypeVarEscape
+
 
 @data Signal begin
     UnboundTypeVar(Symbol)

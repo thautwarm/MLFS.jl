@@ -16,14 +16,17 @@ end
 function Store{K, O}() where {K, O}
     Store(ImD{K, O}())
 end
-Base.getindex(s::Store{K, O}, x::Pair{K, A}...) where {K, O, A<:O} =
+
+Base.getindex(s::Store{K, O}, x::Vector{Pair{K, A}}) where {K, O, A<:O} =
     let im = s.unbox
         for each in x
             im = ImD(im, each)
         end
         Store(im)
     end
+
+Base.getindex(s::Store{K, O}, x::Pair{K, A}) where {K, O, A<:O} = s[[x]]
 Base.getindex(s::Store{K, O}, x::K) where {K, O} = s.unbox[x]
 
 Base.get(s::Store, k, default) = get(s.unbox, k, default)
-Base.in(s::Store{K}, k::K) where K = haskey(s.unbox, k)
+Base.in(k::K, s::Store{K}) where K = haskey(s.unbox, k)

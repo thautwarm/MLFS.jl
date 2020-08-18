@@ -1,8 +1,11 @@
 module MLFS
 using MLStyle
-using HMRowUnification
 using Setfield
+using FunctionWrappers
+CFunc = FunctionWrappers.FunctionWrapper
 
+include("HM.jl")
+using .HM
 export T
 @active T(x) begin
     @match x begin

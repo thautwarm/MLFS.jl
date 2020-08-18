@@ -8,15 +8,14 @@ git-tree-sha1 = "a2a6a5fea4d6f730ec4c18a76d27ec10e8ec1c50"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.0.0"
 
+[[FunctionWrappers]]
+git-tree-sha1 = "e4813d187be8c7b993cb7f85cbf2b7bfbaadc694"
+uuid = "069b7b12-0de2-55c6-9aab-29f3d0a68a2e"
+version = "1.1.1"
+
 [[Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
-[[HMRowUnification]]
-deps = ["MLStyle"]
-git-tree-sha1 = "71edac852f3b9f87af15465d16f8d7b7fb9e423d"
-uuid = "1f764b34-43ae-408e-9bb4-377386bc1704"
-version = "0.1.4"
 
 [[MLStyle]]
 git-tree-sha1 = "937eda9ce36fcce082a42edd7181c8d23f4eb550"
