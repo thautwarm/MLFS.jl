@@ -3,6 +3,12 @@ uuid = "134ce997-ef8c-4161-ad1c-b6b659cb0a92"
 authors = ["thautwarm <twshere@outlook.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+HMRowUnification = "1f764b34-43ae-408e-9bb4-377386bc1704"
+MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
+PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
+Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+
 [compat]
 julia = "1"
 
