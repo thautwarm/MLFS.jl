@@ -21,4 +21,6 @@ let choose = fun x -> fun y -> x
 let _ = choose id
 ```
 
-And without annotation, `choose id` has type `(forall a. a -> a) -> (forall a. a -> a)
+And without annotation for `choose id`, it has the type `(forall a. a -> a) -> (forall a. a -> a)`.
+
+Support for Type classes is WIP.
