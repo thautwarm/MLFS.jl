@@ -49,3 +49,17 @@ Base.empty(::Type{LocalTC}) =
         Store{Symbol, Symbol}(),
         InstRec[],
         LineNumberNode(1, :unknown))
+
+const αβ = UInt8[('a':'z')...]
+
+symgen(g::GlobalTC) =
+    let i = g.count[] + 1
+        g.count[] = i
+        chars = UInt8[]
+        while i != 0
+            j = i%26
+            push!(chars, αβ[j + 1])
+            i = div(i, 26)
+        end
+        Symbol(chars)
+    end

@@ -15,14 +15,13 @@ abstract type ExprImpl end
 
 struct Expr
     ln :: LineNumberNode
-    ty :: UInt
+    ty :: HMT
     expr :: ExprImpl
 end
 
-struct Decl
-    sym :: Symbol
-    ty :: UInt
-    impl :: Expr
+@data Decl begin
+    Perform(impl::Expr)
+    Assign(sym::Symbol, ty::HMT, impl::Expr)
 end
 
 IntType = Union{Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64}

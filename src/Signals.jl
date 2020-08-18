@@ -5,6 +5,7 @@ export Signal, MLError
 @data Signal begin
     UnboundTypeVar(Symbol)
     UnboundVar(Symbol)
+    UnusedAnnotation(Symbol)
     InvalidSyntax(String)
     DuplicateDeclaration(Symbol)
     DuplicateInstanceError(Vector{InstRec})

@@ -13,6 +13,7 @@ end
 (::Type{T})(x::HMT) = App(Nom(:Type), x)
 
 include("Store.jl")
+include("FS.jl")
 include("Core.jl")
 include("Signals.jl")
 include("AST/Surf.jl")
