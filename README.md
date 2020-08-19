@@ -20,8 +20,8 @@ let choose = fun x -> fun y -> x
 
 let _ = choose id
 
-val choose_id′ : (forall a. a) -> (Int -> Int)
-let choose_id′ = choose id
+val choose_id' : (forall a. a) -> (Int -> Int)
+let choose_id' = choose id
 
 (* error: *)
 val choose_id' : (Int -> Int) -> (Int -> Int)
