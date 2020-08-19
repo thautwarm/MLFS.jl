@@ -21,6 +21,8 @@ IntType = Union{Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64}
 FloatType = Union{Float16, Float32, Float64}
 
 @data ExprImpl begin
+    ETypeVal(HMT)
+    EExt(Any)
     EVar(Symbol)
     EVal(Any)
     ELet(Vector{Decl}, Expr)

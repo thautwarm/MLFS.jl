@@ -12,7 +12,8 @@ using MLFS.HM
         [
         :Int => T(Nom(:int64)),
         :Str => T(Nom(:str)),
-        :f => Arrow(Nom(:int64), Nom(:int64))
+        :f => Arrow(Nom(:int64), Nom(:int64)),
+        :Type => T(Nom(:Type))
         ]
     ]
     l = @set l.symmap = l.symmap[
@@ -84,6 +85,16 @@ using MLFS.HM
 
         int_number = int_functional(id).?(app_functional)
 
+        Vec :: Type[NewType(Vec)]
+        Vec = Vec
+
+        mkVec :: (() -> Vec[A]) where A
+        mkVec =  (@julia begin
+            T -> T[]
+        end)(A)
+
+        mkVec.?(vec)
+        
     end
     
     for f in MLFS.inferDecls(g, l, stmts)[1]

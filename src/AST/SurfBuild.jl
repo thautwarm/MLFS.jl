@@ -5,6 +5,8 @@ end
 
 function surf_type(ex)
     @match ex begin
+        QuoteNode(a::Symbol) => Surf.TSym(a)
+        :(NewType($(a::Symbol))) => Surf.TNew(a)
         :(Fn[$a, $b]) => Surf.TArrow(surf_type(a), surf_type(b))
         :($a.?($label)) => Surf.TQuery(string(label), surf_type(a))
         :($f[$a]) => Surf.TApp(surf_type(f), surf_type(a))
@@ -27,6 +29,7 @@ end
 
 function surf_expr(exp::Expr)
     @match exp begin
+    :(@julia $(::LineNumberNode) $jlex) => Surf.EExt(jlex)
     :($a.?($label)) => Surf.EQuery(string(label), surf_expr(a))
     :($f($(args...))) =>
         length(args) === 1 ?

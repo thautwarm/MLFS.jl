@@ -28,6 +28,7 @@ Base.show(io::IO, unique_name::UN) =
     Arrow(from::HMT, to::HMT)
     Tup{N}::(NTuple{N,HMT}) => HMT
     Forall{N}::(NTuple{N, UN}, HMT) => HMT
+    Implicit()
 end
 
 need_parens(hmt::HMT) =
@@ -268,7 +269,7 @@ function mk_tcstate(tctx::Vector{HMT})
         lhs = prune(lhs)
         rhs = prune(rhs)
         lhs === rhs && return true
-        @info :INST lhs rhs
+        # @info :INST lhs rhs
         
         @match lhs, rhs begin
             (Forall(_, lhs), _) => unifyINST(lhs, rhs)

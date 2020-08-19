@@ -13,6 +13,7 @@ abstract type Expr end
     TTuple(Vector{TyExpr})
     TVar(Symbol)
     TSym(Symbol)
+    TNew(Symbol)
     TQuery(String, TyExpr)
 end
 
@@ -32,6 +33,7 @@ end
     EFun(Symbol, Expr)
     EApp(Expr, Expr)
     ETup(Vector{Expr})
+    EExt(Any)
     EQuery(String, Expr)
 end
 

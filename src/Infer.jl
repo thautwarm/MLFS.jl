@@ -3,6 +3,9 @@ export inferType
 function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
     ln = localTC.ln
     typetype::HMT = @switch exp begin
+    @case Surf.TNew(tn)
+        T(Nom(Symbol(tn, '@', ln.line, '(', ln.file, ')')))
+    
     @case Surf.TQuery(label, exp)
         let ret = T(inferType(globalTC, localTC, exp))
             push!(globalTC.queries, label => ret)
@@ -11,11 +14,9 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
     
     @case Surf.TSym(a)
         T(Nom(a))
+    
     @case Surf.TVar(:_)
         T(globalTC.tcstate.new_tvar())
-    
-    @case Surf.TVar(:self)
-        T(Nom(Symbol(:nom, string(ln))))
 
     @case Surf.TVar(a)
         t = get(localTC.typeEnv, a, nothing)
@@ -26,8 +27,8 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
 
     @case Surf.TApp(f, b)
         f = inferType(globalTC, localTC, f)
-        a = inferType(globalTC, localTC, a)
-        T(App(f, a))
+        b = inferType(globalTC, localTC, b)
+        T(App(f, b))
 
     @case Surf.TTuple(args)
         T(Tup(Tuple(inferType(
@@ -93,7 +94,9 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
             annTy = inferType(globalTC, localTC, tyExpr)
             localTC = @set localTC.typeEnv = localTC.typeEnv[sym => annTy]
             @match annTy begin
-                Forall(ns, _) => begin annotated[sym] = ns end
+                Forall(ns, _) => begin 
+                    annotated[sym] = ns
+                end
                 _ => begin annotated[sym] = () end
             end
             nothing
@@ -180,6 +183,15 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
     end
 
     @switch expr begin
+    @case Surf.EExt(jlex)
+        let ln = localTC.ln
+            function (ti::TypeInfo)
+                local t
+                t = new_tvar()
+                t, _ = applyTI(ti, t, ln)
+                IR.Expr(ln, t, IR.EExt(jlex))
+            end
+        end
     @case Surf.EQuery(label, e)
         exprTyProp = inferExpr(globalTC, localTC, e)
         queries = globalTC.queries
@@ -288,8 +300,26 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         prop(eT, eValI, localTC.ln)
     @case Surf.EVar(n)
         n in localTC.typeEnv || throw(MLError(localTC.ln, UnboundVar(n)))
-        gensym = localTC.symmap[n]
-        varT = localTC.typeEnv[n]
-        prop(varT, IR.EVar(gensym), localTC.ln)
+        varT = prune(localTC.typeEnv[n])
+        @match varT begin
+            T(_) && t =>
+                let ln = localTC.ln
+                    function propTVar(ti::TypeInfo)
+                        @match ti begin
+                            InstFrom(t′) || InstTo(t′) =>
+                                begin
+                                    unify(t′, t) || throw(MLError(ln, UnificationFail))
+                                end
+                            _ => nothing
+                        end
+                        
+                        IR.Expr(ln, t, IR.ETypeVal(t))
+                    end
+                end
+            _ =>
+                let gensym = localTC.symmap[n]
+                    prop(varT, IR.EVar(gensym), localTC.ln)
+                end
+        end
     end
 end
