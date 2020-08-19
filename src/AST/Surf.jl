@@ -13,12 +13,14 @@ abstract type Expr end
     TTuple(Vector{TyExpr})
     TVar(Symbol)
     TSym(Symbol)
+    TQuery(String, TyExpr)
 end
 
 @data Decl begin
     DAnn(Symbol, TyExpr)
     DLoc(LineNumberNode)
     DBind(Symbol, Expr)
+    DQuery(String, Symbol)
 end
 
 @data Expr begin
@@ -30,7 +32,7 @@ end
     EFun(Symbol, Expr)
     EApp(Expr, Expr)
     ETup(Vector{Expr})
-    
+    EQuery(String, Expr)
 end
 
 end # module

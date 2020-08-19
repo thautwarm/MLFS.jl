@@ -4,12 +4,6 @@ using MLStyle
 using MLFS.HM: HMT
 import MLFS.HM
 
-TForall = HM.Forall
-TApp = HM.App
-TArrow = HM.Arrow
-TTuple = HM.Tup
-TVar = HM.Var
-TFresh = HM.Fresh
 abstract type ExprImpl end
 
 struct Expr
