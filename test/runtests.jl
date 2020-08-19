@@ -50,7 +50,12 @@ using MLFS.HM
         pair = (c(1), c("a")).?(hint_pair)
 
         choose_id′ :: ((a where a) -> (Int -> Int))
-        choose_id′ = (choose(id)).?(stronger_assumptions)
+        choose_id′ = (choose(id)).?(stronger_assumptions_1)
+
+        choose_id′ = (choose(id)).?(stronger_assumptions_2)
+
+        # choose_id′ :: ((Int -> Int) -> (Int -> Int))
+        # choose_id′ = choose_id
 
     end
     
