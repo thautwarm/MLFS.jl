@@ -23,6 +23,7 @@ getTConsHead(h::HMT) =
         Nom(_) => h
         App(t, _) ||
         Forall(_, t) => getTConsHead(t)
+        Arrow(Implicit(_), t) => getTConsHead(t)
         Arrow(_, _) => ArrowClass
         _ => generalClass
     end

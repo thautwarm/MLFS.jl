@@ -10,10 +10,10 @@ PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [compat]
+DataStructures = "~0.17.1, 0.18.0"
 MLStyle = "0.4"
 PrettyPrint = "0.2"
 Setfield = "0.7"
-DataStructures = "~0.17.1, 0.18.0"
 julia = "^1.4"
 
 [extras]

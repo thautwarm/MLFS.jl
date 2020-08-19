@@ -71,6 +71,10 @@ end
 const _InferPostponed = CFunc{IR.Decl, Tuple{}}
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
+    inferDecls(globalTC, localTC, decls, Val(false))
+end
+
+function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl}, ::Val{isGlobal}) where isGlobal
     annotated :: Dict{Symbol, Tuple} = Dict{Symbol, Tuple}()
     loweredDeclFs = _InferPostponed[]
     @inline addDecl!(f::Function) = push!(loweredDeclFs, _InferPostponed(f))
@@ -96,8 +100,22 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
             localTC = @set localTC.typeEnv = localTC.typeEnv[sym => annTy]
             @match annTy begin
                 Forall(ns, _) => begin
-                    annotated[sym] = ns
-                end
+                        annotated[sym] = ns
+                    end
+                Implicit(t) =>
+                    if isGlobal
+                        t = globalTC.tcstate.prune(t)
+                        globalImplicits = get!(globalTC.globalImplicits, getTConsHead(t)) do
+                            InstRec[]
+                        end
+                        push!(globalImplicits, InstRec(t, localTC.ln, gensym, false))
+                        annotated[sym] = ()
+                    else
+                        inst = InstRec(t, localTC.ln, gensym, false)
+                        localImplicits = cons(inst, localTC.localImplicits)
+                        localTC = @set localTC.localImplicits = localImplicits
+                        annotated[sym] = ()
+                    end
                 _ => begin annotated[sym] = () end
             end
             nothing
@@ -115,7 +133,7 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
                 typevars = pop!(annotated, sym)
                 localTC.symmap[sym], globalTC.tcstate.prune(localTC.typeEnv[sym]), typevars
             else
-                gensym = symgen(globalTC)
+                gensym = Symbol(symgen(globalTC), :_, sym)
                 localTC = @set localTC.symmap = localTC.symmap[sym => gensym]
                 tvar = globalTC.tcstate.new_tvar()
                 localTC = @set localTC.typeEnv = localTC.typeEnv[sym => tvar]
@@ -246,7 +264,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         end
 
     @case Surf.EFun(n, expr)
-        gensym = symgen(globalTC)
+        gensym = Symbol(symgen(globalTC), :_, n)
         localTC = @set localTC.symmap = localTC.symmap[n => gensym]
         argT = new_tvar()
         localTC = @set localTC.typeEnv = localTC.typeEnv[n => argT]
