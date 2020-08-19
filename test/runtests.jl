@@ -48,6 +48,10 @@ using MLFS.HM
         c.?(hint_c)
 
         pair = (c(1), c("a")).?(hint_pair)
+
+        choose_id′ :: ((a where a) -> (Int -> Int))
+        choose_id′ = (choose(id)).?(stronger_assumptions)
+
     end
     
     for f in MLFS.inferDecls(g, l, stmts)[1]

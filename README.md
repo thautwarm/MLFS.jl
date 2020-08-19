@@ -19,8 +19,14 @@ val choose : forall a. a -> a -> a
 let choose = fun x -> fun y -> x
 
 let _ = choose id
+
+val choose_id′ :: (forall a. a) -> (Int -> Int)
+let choose_id′ = (choose(id)).?(stronger_assumptions)
+
 ```
 
 And without annotation for `choose id`, it has the type `(forall a. a -> a) -> (forall a. a -> a)`.
+
+You can also annotate a less principal type for `choose id`, see `choose_id′`.
 
 Support for Type classes is WIP.
