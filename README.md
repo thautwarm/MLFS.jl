@@ -35,7 +35,7 @@ in MLFS you'll have to write this type under the help of scoped type variables o
 
 ```ocaml
 val choose_id : forall c. (c -> c) -> (c -> c)
-let choose_id = choose (id : c -> c)
+let choose_id = choose (id : c -> _)
 ```
 
 or 

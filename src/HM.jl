@@ -268,8 +268,8 @@ function mk_tcstate(tctx::Vector{HMT})
         lhs = prune(lhs)
         rhs = prune(rhs)
         lhs === rhs && return true
-        @info :INST lhs rhs
-        
+        # @info :INST lhs rhs
+
         @match lhs, rhs begin
             (Forall(_, lhs), _) => unifyINST(lhs, rhs)
 

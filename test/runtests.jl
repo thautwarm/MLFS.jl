@@ -56,7 +56,7 @@ using MLFS.HM
 
         choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
         choose_id′ =
-            let id :: Fn[c -> c],
+            let id :: Fn[c, _],
                 id = id
                 
                 choose(id).?(stronger_assumptions_3)
