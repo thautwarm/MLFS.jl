@@ -34,7 +34,7 @@ using MLFS.HM
         id :: ((a -> a) where a)
         id = x -> x
 
-        choose :: ((a -> a -> a) where a)
+        choose :: ((b -> b -> b) where b)
         choose = x -> y -> x
 
         choose_id = choose(id)
@@ -53,6 +53,14 @@ using MLFS.HM
         choose_id′ = (choose(id)).?(stronger_assumptions_1)
 
         choose_id′ = (choose(id)).?(stronger_assumptions_2)
+
+        choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
+        choose_id′ =
+            let id :: Fn[c -> c],
+                id = id
+                
+                choose(id).?(stronger_assumptions_3)
+            end
 
         # choose_id′ :: ((Int -> Int) -> (Int -> Int))
         # choose_id′ = choose_id

@@ -30,6 +30,20 @@ let choose_id' = choose id
 
 And without annotation for `choose id`, it has the type `(forall a. a -> a) -> (forall a. a -> a)`.
 
-You can also annotate a less principal type for `choose id`, see `choose_id′`.
+In System F closed by η-expansion, `choose id` holds the type `forall a. a -> a -> a`,
+in MLFS you'll have to write this type under the help of scoped type variables or explicit instantiation.
+
+```ocaml
+val choose_id : forall c. c -> c -> c
+let choose_id = choose (id : c -> c)
+```
+
+or 
+
+```ocaml
+val choose_id : forall c. c -> c -> c
+let choose_id = choose (INST id)
+```
+
 
 Support for Type classes is WIP.

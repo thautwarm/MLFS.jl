@@ -268,7 +268,11 @@ function mk_tcstate(tctx::Vector{HMT})
         lhs = prune(lhs)
         rhs = prune(rhs)
         lhs === rhs && return true
+        @info :INST lhs rhs
+        
         @match lhs, rhs begin
+            (Forall(_, lhs), _) => unifyINST(lhs, rhs)
+
             (Var(i && ai), b) ||
             (b, Var(i && ai)) =>
                 if occur_in(ai, b)
@@ -278,7 +282,7 @@ function mk_tcstate(tctx::Vector{HMT})
                     true
                 end
 
-            (Forall(_, lhs), _) => unifyINST(lhs, rhs)
+
             (_, Forall()) =>
                 begin # for debugger
                     unifyINST(lhs, instantiate(rhs))

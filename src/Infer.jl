@@ -69,7 +69,7 @@ end
 const _InferPostponed = CFunc{IR.Decl, Tuple{}}
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
-    annotated :: Set{Symbol} = Set{Symbol}()
+    annotated :: Dict{Symbol, Tuple} = Dict{Symbol, Tuple}()
     loweredDeclFs = _InferPostponed[]
     @inline addDecl!(f::Function) = push!(loweredDeclFs, _InferPostponed(f))
 
@@ -87,12 +87,15 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
             localTC = @set localTC.ln = ln
             nothing
         @case Surf.DAnn(sym, tyExpr)
-            sym in annotated && throw(MLError(localTC.ln, UnusedAnnotation(sym)))
+            haskey(annotated, sym) && throw(MLError(localTC.ln, UnusedAnnotation(sym)))
             gensym = symgen(globalTC)
             localTC = @set localTC.symmap = localTC.symmap[sym => gensym]
             annTy = inferType(globalTC, localTC, tyExpr)
             localTC = @set localTC.typeEnv = localTC.typeEnv[sym => annTy]
-            push!(annotated, sym)
+            @match annTy begin
+                Forall(ns, _) => begin annotated[sym] = ns end
+                _ => begin annotated[sym] = () end
+            end
             nothing
         @case Surf.DBind(sym, expr)
             if sym === :_
@@ -101,18 +104,24 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
                 end
                 continue
             end
-            (gensym, annTy) = if sym in annotated
-                pop!(annotated, sym)
-                localTC.symmap[sym], globalTC.tcstate.prune(localTC.typeEnv[sym])
+            (gensym, annTy, typevars) = if haskey(annotated, sym)
+                typevars = pop!(annotated, sym)
+                localTC.symmap[sym], globalTC.tcstate.prune(localTC.typeEnv[sym]), typevars
             else
                 gensym = symgen(globalTC)
                 localTC = @set localTC.symmap = localTC.symmap[sym => gensym]
                 tvar = globalTC.tcstate.new_tvar()
                 localTC = @set localTC.typeEnv = localTC.typeEnv[sym => tvar]
-                gensym, tvar
+                gensym, tvar, ()
             end
             # @info :annotation sym annTy
-            let exprTyProp = inferExpr(globalTC, localTC, expr),
+            let localTC = if isempty(typevars)
+                            localTC 
+                        else
+                           @set localTC.typeEnv =
+                                localTC.typeEnv[[un.name => T(Bound(un)) for un in typevars]]
+                        end,
+                exprTyProp = inferExpr(globalTC, localTC, expr),
                 gensym = gensym,
                 annTy = annTy,
                 prune = globalTC.tcstate.prune
@@ -208,7 +217,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
                 local argT, retT, mkTI, eF, eArg
                 argT = new_tvar()
                 retT = new_tvar()
-                retT, _ =  applyTI(ti, retT, ln)
+                retT, mkTI =  applyTI(ti, retT, ln)
                 eF = fProp(InstTo(Arrow(argT, retT)))
                 eArg = argProp(InstFrom(argT))
                 IR.Expr(ln, retT, IR.EApp(eF, eArg))
