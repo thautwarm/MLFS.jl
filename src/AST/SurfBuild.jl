@@ -1,10 +1,12 @@
-export @surf_expr, @surf_toplevel
+export @surf_expr, @surf_toplevel, @surf_type
 function surf_type(s::Symbol)
     Surf.TVar(s)
 end
 
 function surf_type(ex)
     @match ex begin
+        :(Fn[$a, $b]) => Surf.TArrow(surf_type(a), surf_type(b))
+        :($a.?($label)) => Surf.TQuery(string(label), surf_type(a))
         :($f[$a]) => Surf.TApp(surf_type(f), surf_type(a))
         Expr(:tuple, args...) =>
             Surf.TTuple(Surf.TyExpr[surf_type(a) for a in args])
@@ -25,6 +27,7 @@ end
 
 function surf_expr(exp::Expr)
     @match exp begin
+    :($a.?($label)) => Surf.EQuery(string(label), surf_expr(a))
     :($f($(args...))) =>
         length(args) === 1 ?
         Surf.EApp(surf_expr(f), surf_expr(args[1])) :
@@ -65,7 +68,7 @@ function surf_expr(exp::Expr)
                                     end
                                 _ => Surf.ELoc(ln, last)
                             end
-                        :($_ :: $_) || :($_ = $_) => 
+                        :($_ :: $_) || :($_ = $_) || :($_.?($_)) => 
                             @match last begin
                                 Surf.ELet(vec, _) =>
                                     begin
@@ -83,6 +86,7 @@ function surf_expr(exp::Expr)
 end
 
 surf_decl(decl::Any) = @match decl begin
+    :($(x::Symbol).?($label)) => Surf.DQuery(string(label), x)
     :($(x::Symbol) :: $t) => Surf.DAnn(x, surf_type(t))
     :($(x::Symbol) = $v) => Surf.DBind(x, surf_expr(v))
     ln::LineNumberNode => Surf.DLoc(ln)
@@ -101,4 +105,8 @@ end
 
 macro surf_expr(ex)
     surf_expr(ex)
+end
+
+macro surf_type(ex)
+    surf_type(ex)
 end

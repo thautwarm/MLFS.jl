@@ -1,6 +1,6 @@
 export arrowClass, generalClass, getTConsHead
-export InstRec, GlobalTC, LocalTC
-const TCState = Base._return_type(mk_tcstate, (Vector{HMT}, Function))
+export InstRec, GlobalTC, LocalTC, show_hints
+const TCState = Base._return_type(mk_tcstate, (Vector{HMT}, ))
 Gensym = Symbol
 
 """
@@ -31,11 +31,20 @@ struct GlobalTC
     tcstate :: TCState
     count :: Ref{UInt}
     globalImplicits :: Dict{Nom, InstResolCtx}
+    queries :: Vector{Pair{String, HMT}}
 end
 
-Base.empty(::Type{GlobalTC}) =
-    GlobalTC(mk_tcstate(HMT[]), Ref(UInt(0)), Dict{Nom, InstanceNotFound}())
+Base.show(io::IO, ::GlobalTC) = Base.show(io, "<GlobalTC>")
 
+Base.empty(::Type{GlobalTC}) =
+    GlobalTC(mk_tcstate(HMT[]), Ref(UInt(0)), Dict{Nom, InstanceNotFound}(), Pair{String, HMT}[])
+
+function show_hints(globalTC::GlobalTC)
+    prune = globalTC.tcstate.prune
+    for (k, v) in globalTC.queries
+        println(k, ": ",  prune(v))
+    end
+end
 struct LocalTC
     typeEnv :: Store{Symbol, HMT}
     symmap :: Store{Symbol, Gensym}
