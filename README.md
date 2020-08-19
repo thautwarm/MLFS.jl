@@ -20,7 +20,7 @@ let choose = fun x -> fun y -> x
 
 let _ = choose id
 
-val choose_id′ :: (forall a. a) -> (Int -> Int)
+val choose_id′ : (forall a. a) -> (Int -> Int)
 let choose_id′ = (choose(id)).?(stronger_assumptions)
 
 ```
