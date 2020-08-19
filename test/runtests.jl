@@ -49,21 +49,23 @@ using MLFS.HM
 
         pair = (c(1), c("a")).?(hint_pair)
 
-        choose_id′ :: ((a where a) -> (Int -> Int))
+        choose_id′ :: ((Int -> Int) -> (Int -> Int))
         choose_id′ = (choose(id)).?(stronger_assumptions_1)
 
         choose_id′ = (choose(id)).?(stronger_assumptions_2)
 
         choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
         choose_id′ =
-            let id :: Fn[c, _],
-                id = id
-                
-                choose(id).?(stronger_assumptions_3)
-            end
+            choose(id).?(stronger_assumptions_3)
+            
 
         # choose_id′ :: ((Int -> Int) -> (Int -> Int))
         # choose_id′ = choose_id
+
+        int_functional :: Fn[Fn[Int, Int], Int]
+        int_functional = f -> f(1)
+
+        int_number = int_functional(id).?(app_functional)
 
     end
     

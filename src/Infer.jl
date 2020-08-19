@@ -219,7 +219,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
                 retT = new_tvar()
                 retT, mkTI =  applyTI(ti, retT, ln)
                 eF = fProp(InstTo(Arrow(argT, retT)))
-                eArg = argProp(InstFrom(argT))
+                eArg = argProp(InstTo(argT))
                 IR.Expr(ln, retT, IR.EApp(eF, eArg))
             end
         end
