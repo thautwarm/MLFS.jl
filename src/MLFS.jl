@@ -11,6 +11,7 @@ _args = [Symbol(:t_, i) for i = 1:3]
 function (f::CFunc{R, Tuple{}})()::R where R
     f.f()
 end
+
 for i in 1:3
     let args = _args[1:i],
         targs = _targs[1:i],

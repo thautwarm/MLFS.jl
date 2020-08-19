@@ -3,8 +3,8 @@ module IR
 using MLStyle
 using MLFS.HM: HMT
 import MLFS.HM
-export applyImplicits
-
+export applyImplicits, applyExplicits
+using Setfield: @set
 abstract type ExprImpl end
 
 struct Expr
@@ -45,4 +45,13 @@ function applyImplicits(e::ExprImpl, implicits::Vector{<:HMT}, finalty::HMT, ln:
     end
     Expr(ln, finalty, e)
 end
+
+function applyExplicits(e::ExprImpl, explicits::Vector{Expr}, targety::HMT, ln::LineNumberNode)
+    for explicit in explicits
+        exp = Expr(ln, nothing, e)
+        e = EApp(e, explicit)
+    end
+    Expr(ln, targety, e)
+end
+
 end # module

@@ -3,24 +3,27 @@ function instanceResolve(
         localTC::LocalTC,
         target::HMT,
         ln::LineNumberNode,
-    )::InstRec
+    )::IR.Expr
     tcstate = globalTC.tcstate
     localImplicits = localTC.localImplicits
     target = tcstate.prune(target)
 
-    candicates = InstRec[]
+    candicates = Pair{InstRec, Vector{HMT}}[]
     for i in eachindex(localImplicits)
         rec = localImplicits[i]
         if !rec.isPruned
             rec.t = tcstate.prune(rec.t)
         end
-        if target ⪯ rec.t
-            push!(candicates, rec)
+        is_less, evidences = less_than_under_evidences(target, rec.t)
+        if is_less
+            push!(candicates, rec => evidences)
         end
     end
     !isempty(candicates) && begin
         if length(candicates) === 1
-            return candicates[1]
+            rec, evidences = candicates[1]
+            explicits = [instanceResolve(globalTC, localTC, evi, ln) for evi in evidences]
+            return IR.applyExplicits(IR.EVar(rec.gensym), explicits, targety, ln)
         else
             throw(MLError(
                 ln,
@@ -38,13 +41,16 @@ function instanceResolve(
         if !rec.isPruned
             rec.t = tcstate.prune(rec.t)
         end
-        if target ⪯ rec.t
-            push!(candicates, rec)
+        is_less, evidences = less_than_under_evidences(target, rec.t)
+        if is_less
+            push!(candicates, rec => evidences)
         end
     end
     !isempty(candicates) && begin
         if length(candicates) === 1
-            return candicates[1]
+            rec, evidences = candicates[1]
+            explicits = [instanceResolve(globalTC, localTC, evi, ln) for evi in evidences]
+            return IR.applyExplicits(IR.EVar(rec.gensym), explicits, targety, ln)
         else
             throw(MLError(
                 ln,

@@ -3,7 +3,7 @@ export HMT, TVar, mk_tcstate, UN, VerboseUN
 export Var, Nom, Bound, Var, Arrow, App, Tup, Forall, Implicit
 export gTrans, gTransCtx, gCheck
 export tvar_of_int, int_of_tvar, IllFormedType
-export ⪯
+export ⪯, less_than_under_evidences
 
 using MLStyle
 import Base
@@ -431,7 +431,24 @@ end
             _ => gTrans(subst, root)
         end
     end
-    small_tc.unifyINST(subst(lhs), subst(rhs))
+    small_tc.unifyImplicits(subst(lhs), subst(rhs), HMT[])
+end
+
+function less_than_under_evidences(lhs::HMT, rhs ::HMT)
+    evidences = HMT[]
+    small_tc = mk_tcstate(HMT[])
+    subst_table = Dict{UInt, Var}()
+    function subst(root::HMT)
+        @match root begin
+            Var(i) =>
+                get!(subst_table, i) do
+                    small_tc.new_tvar()
+                end
+            
+            _ => gTrans(subst, root)
+        end
+    end
+    small_tc.unifyImplicits(subst(lhs), subst(rhs), evidences), evidences
 end
 
 end
