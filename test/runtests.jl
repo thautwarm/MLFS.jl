@@ -12,6 +12,7 @@ using MLFS.HM
         [
         :Int => T(Nom(:int64)),
         :Str => T(Nom(:str)),
+        :Bool => T(Nom(:bool)),
         :f => Arrow(Nom(:int64), Nom(:int64)),
         :Type => T(Nom(:Type))
         ]
@@ -115,7 +116,21 @@ using MLFS.HM
 
         ctxVecLen.?("implicit_meth")
 
-        
+        Eq :: Type[NewType(Eq)]
+    
+        makeEqList :: implicit[(implicit[Eq[a]] -> Eq[a]) where a]
+        makeEqList = @julia(nothing)
+
+        getEq :: (Eq[a] -> (a, a) -> Bool) where a
+        getEq = @julia(nothing)
+
+        (==) :: (implicit[Eq[a]] -> (a, a) -> Bool) where a
+        (==) = eq -> ab -> getEq(eq)(ab)
+
+        aVec :: Vec[Int]
+        aVec = mkVec(())
+
+        _ = (aVec == aVec).?(instance_not_found)        
 
         # List :: Type[NewType(List)]
         # List = List
