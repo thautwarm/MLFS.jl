@@ -21,8 +21,7 @@ let choose = fun x -> fun y -> x
 let _ = choose id
 
 val choose_id′ : (forall a. a) -> (Int -> Int)
-let choose_id′ = (choose(id)).?(stronger_assumptions)
-
+let choose_id′ = choose id
 ```
 
 And without annotation for `choose id`, it has the type `(forall a. a -> a) -> (forall a. a -> a)`.
