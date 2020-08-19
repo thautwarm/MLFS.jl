@@ -18,10 +18,10 @@ using MLFS.HM
     l = @set l.symmap = l.symmap[
             :f => :f_0xa1
         ]
-    println(inferType(g, l, t))
+    # println(inferType(g, l, t))
     exp = @surf_expr f(1)
-    pprintln(exp)
-    pprintln(MLFS.inferExpr(g, l, exp)(NoProp))
+    # pprintln(exp)
+    # pprintln(MLFS.inferExpr(g, l, exp)(NoProp))
     # Write your tests here.
 
     stmts = @surf_toplevel begin
@@ -34,15 +34,63 @@ using MLFS.HM
         id :: ((a -> a) where a)
         id = x -> x
 
-        choose :: ((a -> a -> a) where a)
+        choose :: ((b -> b -> b) where b)
         choose = x -> y -> x
 
         choose_id = choose(id)
+        choose_id.?(hint_choose_id)
+        
+        J :: Fn[a, Fn[b, (a, b)] where b] where a
+        J = x -> y -> (x, y)
+
+        # c :: Fn[a, (Int, a)] where a
+        c = J(1)
+        c.?(hint_c)
+
+        pair = (c(1), c("a")).?(hint_pair)
+
+        choose_id′ :: ((Int -> Int) -> (Int -> Int))
+        choose_id′ = (choose(id)).?(stronger_assumptions_1)
+
+        choose_id′ = (choose(id)).?(stronger_assumptions_2)
+
+        choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
+        choose_id′ =
+            choose(id).?(stronger_assumptions_3)
+
+        choose_id′ :: ((Fn[a, a] where a) -> (Int -> Int))
+            choose_id′ = (choose(id)).?(stronger_assumptions_4)
+  
+    
+        choose_id′′ :: ((a where a) -> (Int -> Int))
+        choose_id′′ = choose_id′
+
+        choose_id′ :: ((Fn[a, a] where a) -> (Fn[a, a] where a))
+            choose_id′ = (choose(id)).?(stronger_assumptions_5)
+
+        choose_id′′ :: ((a where a) -> (Int -> Int))
+        choose_id′′ =
+            let choose_id_ :: ((Fn[a, a] where a) -> (Int -> Int)),
+                choose_id_ = choose(id)
+                
+                choose_id_
+            end
+    
+        # choose_id′ :: ((Int -> Int) -> (Int -> Int))
+        # choose_id′ = choose_id
+
+        int_functional :: Fn[Fn[Int, Int], Int]
+        int_functional = f -> f(1)
+
+        int_number = int_functional(id).?(app_functional)
+
     end
-    pprintln([f() for f in MLFS.inferDecls(g, l, stmts)[1]])
-    for (i, each) in enumerate(g.tcstate.tctx)
-        println(i, ": ", each)
+    
+    for f in MLFS.inferDecls(g, l, stmts)[1]
+        f()
     end
 
+    show_hints(g)
 
+    
 end

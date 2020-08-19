@@ -1,34 +1,33 @@
 module HM
-export HMT, TVar, mk_tcstate
-export Refvar, Genvar
-export Var, Nom, Fresh, Var, Arrow, App, Tup, Forall
+export HMT, TVar, mk_tcstate, UN, VerboseUN
+export Var, Nom, Bound, Var, Arrow, App, Tup, Forall
 export gTrans, gTransCtx, gCheck
 export tvar_of_int, int_of_tvar, IllFormedType
 export ⪯
 
 using MLStyle
 import Base
-abstract type TVar end
-@data TVar begin
-    Refvar(i::UInt)
-    Genvar(g::UInt, n::Symbol)
+
+const VerboseUN = Ref(false)
+mutable struct UN # unique name
+    name :: Symbol
 end
 
-function Base.show(io::IO, x::TVar)
-    @match x begin
-        Genvar(g, n) => print(io, "'$n($g)")
-        Refvar(i) => print(io, '\'', i)
+Base.show(io::IO, unique_name::UN) =
+    if VerboseUN[]
+        Base.print(io, unique_name.name, "@", objectid(unique_name))
+    else
+        Base.print(io, unique_name.name)
     end
-end
 
 @data HMT begin
-    Var(var::TVar)
+    Var(id::UInt)
     Nom(n::Symbol)
-    Fresh(Symbol)
+    Bound(n::UN)
     App(f::HMT, arg::HMT)
     Arrow(from::HMT, to::HMT)
     Tup{N}::(NTuple{N,HMT}) => HMT
-    Forall{N}::(NTuple{N,Symbol}, HMT) => HMT
+    Forall{N}::(NTuple{N, UN}, HMT) => HMT
 end
 
 need_parens(hmt::HMT) =
@@ -49,13 +48,14 @@ with_parens(f::Function, io::IO, need_parens::Bool) =
 Base.show(io::IO, hmt::HMT) =
     @switch hmt begin
     @case Var(v)
+        print(io, '\'')
         print(io, v)
         return
     @case Nom(n)
         print(io, n)
         return
 
-    @case Fresh(n)
+    @case Bound(n)
         print(io, n)
         return
 
@@ -88,7 +88,7 @@ Base.show(io::IO, hmt::HMT) =
 
 function gTrans(self::Function, root::HMT)
     @match root begin
-        Var(_) || Nom(_) || Fresh(_) => root
+        Var(_) || Nom(_) || Bound(_) => root
         App(f, arg) => App(self(f), self(arg))
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
         Tup(xs) => Tup(Tuple(self(x) for x in xs))
@@ -97,9 +97,9 @@ function gTrans(self::Function, root::HMT)
 end
 
 function gTransCtx(self′::Function, ctx::Ctx, root::HMT) where Ctx
-    self(root::HMT) = self′(ctx, root)
+    @inline self(root::HMT) = self′(ctx, root)
     @match root begin
-        Var(_) || Nom(_) || Fresh(_) => root
+        Var(_) || Nom(_) || Bound(_) => root
         App(f, arg) => App(self(f), self(arg))
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
         Tup(xs) => Tup(Tuple(self(x) for x in xs))
@@ -109,7 +109,7 @@ end
 
 function gCheck(self::Function, root::HMT)
     @match root begin
-        Var(_) || Nom(_) || Fresh(_) => true
+        Var(_) || Nom(_) || Bound(_) => true
         App(f, arg) => self(f) && self(arg)
         Arrow(arg, ret) => self(arg) && self(ret)
         Tup(xs) => all(self(x) for x in xs)
@@ -117,89 +117,83 @@ function gCheck(self::Function, root::HMT)
     end
 end
 
-function fresh(substitutions::Dict{Symbol, V}, root::HMT) where V <: HMT
-    substitutions = Dict{Fresh, V}(Fresh(k) => v for (k, v) in substitutions)
+function fresh(substitutions::Dict{UN, V}, root::HMT) where V <: HMT
+    substitutions = Dict{Bound, V}(Bound(k) => v for (k, v) in substitutions)
     fresh(substitutions, root)
 end
 
-function fresh(substitutions::Dict{Fresh, V}, root::HMT) where V <: HMT
+function fresh(substitutions::Dict{Bound, V}, root::HMT) where V <: HMT
     function freshRec(root::HMT)
         @match root, substitutions begin
-        (Fresh(_), Dict(root => var)) => var
-        (Forall(ns, p), _) => let restore = Pair{Fresh, HMT}[]
-                for n in ns
-                    k = Fresh(n)
-                    v = pop!(substitutions, k, nothing)
-                    if v !== nothing
-                        push!(restore, k => v)
-                    end
-                end
-                r = isempty(substitutions) ? p : gTrans(freshRec, p)
-                for (k, v) in restore
-                    substitutions[k] = v
-                end
-                r
-            end
+        (Bound(_), Dict(root => var)) => var
+        # (Forall(ns, p), _) => let restore = Pair{Bound, HMT}[]
+        #         for n in ns
+        #             k = Bound(n)
+        #             v = pop!(substitutions, k, nothing)
+        #             if v !== nothing
+        #                 push!(restore, k => v)
+        #             end
+        #         end
+        #         r = isempty(substitutions) ? p : gTrans(freshRec, p)
+        #         for (k, v) in restore
+        #             substitutions[k] = v
+        #         end
+        #         Forall(ns, r)
+        #     end
         (t, _) => gTrans(freshRec, t)
         end
     end
     freshRec(root)
 end
 
+function subst(substitutions::Dict{A, B}, root::HMT) where {A <: HMT, B <: HMT}
+    @match substitutions begin
+        Dict(root => replaced) => replaced
+        _ => gTransCtx(subst, substitutions, root)
+    end
+end
 struct IllFormedType <: Exception
     msg::String
 end
 
 function tvar_of_int(i::Integer)
-    Var(Refvar(i))
+    Var(i)
 end
 
 function int_of_tvar(x::Var)
-    @match x begin
-        Var(Refvar(i)) => i
-        _ => nothing
-    end
+    x.id
 end
 
-function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=nothing)
-    genvars = Genvar[]
-    genvar_links = Set{UInt}[]
-    function new_genvar(s::Symbol)::Var
-        genlevel = length(genvars) + 1
-        genvar = Genvar(genlevel, s)
-        push!(genvars, genvar)
-        push!(genvar_links, Set{UInt}())
-        Var(genvar)
-    end
+function un_of_bound(x::Bound)
+    x.n
+end
 
-    function unlink(maxlevel :: Integer)
-        while true
-            level = length(genvars)
-            if level <= maxlevel
-                break
-            end
-            pop!(genvars)
-            vars = pop!(genvar_links) :: Set{UInt}
-            for typevar_id in vars
-                tctx[typevar_id] = Var(Refvar(typevar_id))
-            end
+function bound_of_un(x::UN)
+    Bound(x)
+end
+
+function mk_tcstate(tctx::Vector{HMT})
+    bound_links = Dict{UN, Set{UInt}}()
+
+    function unlink(un::Union{UN, Bound})
+        unlink(un) do _::UInt
+            nothing
         end
     end
 
-    function unlink(f::Function, maxlevel :: Integer)
-        while true
-            level = length(genvars)
-            if level <= maxlevel
-                break
-            end
-            gen = pop!(genvars)
-            vars = pop!(genvar_links) :: Set{UInt}
-            for typevar_id in vars
-                v = Var(Refvar(typevar_id))
-                tctx[typevar_id] = v
-                f(Var(gen), v)
-            end
+    function unlink(f::Function, b::Bound)
+        unlink(f, un_of_bound(b))
+    end
+
+    function unlink(f::Function, un::UN)
+        rels = pop!(bound_links, un, nothing)
+        rels === nothing && return
+        for rel in rels
+            tctx[rel] = Var(rel)
+            f(rel)
         end
+        empty!(rels)
+        nothing
     end
 
     function new_tvar()::HMT
@@ -216,7 +210,7 @@ function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=n
         vid
     end
 
-    function occur_in(i::Refvar, ty::HMT)
+    function occur_in(i::UInt, ty::HMT)
         @switch ty begin
             @case Var(i′) && if i′ === i end
                 return false
@@ -230,17 +224,43 @@ function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=n
         end
     end
 
+    function link!(typeref::UInt, b::Bound)
+        un = un_of_bound(b)
+        links = 
+            get!(bound_links, un) do
+                Set{UInt}(UInt[typeref])
+            end
+        typeref in links || begin
+            push!(links, typeref)
+            tctx[typeref] = b
+        end
+        b
+    end
+
+    function link!(typeref::UInt, t::HMT)
+        tctx[typeref] = t
+        t
+    end
+    
+
     function prune(a::HMT)
         @match a begin
-            Var(Refvar(i)) =>
+            Var(i) =>
                 @match tctx[i] begin
-                    Var(Refvar(i′)) && if i′ === i end => a
-                    a => let t = prune(a)
-                            tctx[i] = t
-                            t
-                         end
+                    Var(i′) && if i′ === i end => a
+                    t => link!(i, prune(t))
                 end
             a => gTrans(prune, a)
+        end
+    end
+    
+    function instantiate(x::HMT)
+        @match x begin
+            Forall(ns, ty) =>
+                let freshmap = Dict{Bound, Var}(Bound(a) => new_tvar() for a in ns)
+                    subst(freshmap, ty)
+                end
+            _ => x
         end
     end
 
@@ -248,43 +268,35 @@ function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=n
         lhs = prune(lhs)
         rhs = prune(rhs)
         lhs === rhs && return true
+        @info :INST lhs rhs
+        
         @match lhs, rhs begin
-            (Forall(ns1, ty1), Forall(ns2, ty2)) =>
-            begin
-                genlevel = length(genvar_links)
-                subst1 = Dict{Fresh, Var}(Fresh(a) => new_genvar(a) for a in ns1)
-                subst2 = Dict{Fresh, Var}(Fresh(a) => new_tvar() for a in ns2)
-                unifyINST(fresh(subst1, ty1), fresh(subst2, ty2)) || return false
-                unlink(genlevel)
-                true
-            end
+            (Forall(_, lhs), _) => unifyINST(lhs, rhs)
 
-            (Var(Refvar(i) && ai), b) ||
-            (b, Var(Refvar(i) && ai)) =>
+            (Var(i && ai), b) ||
+            (b, Var(i && ai)) =>
                 if occur_in(ai, b)
                     throw(IllFormedType("a = a -> b"))
                 else
-                    @match b begin
-                        Genvar(genlevel, _) =>
-                            push!(genvar_links[genlevel], i)
-                        _ => nothing
-                    end
-                    tctx[i] = b
+                    link!(i, b)
                     true
                 end
 
-            (ty1, Forall(ns2, ty2)) =>
-                begin
-                    subst2 = Dict{Fresh, Var}(Fresh(a) => new_tvar() for a in ns2)
-                    unifyINST(ty1, fresh(subst2, ty2))
-                end
 
+            (_, Forall()) =>
+                begin # for debugger
+                    unifyINST(lhs, instantiate(rhs))
+                end
             
             (Arrow(a1, r1), Arrow(a2, r2)) =>
-                unifyINST(a2, a1) && unifyINST(r1, r2)
+                begin # for debugger
+                    unifyINST(a2, a1) && unifyINST(r1, r2)
+                end
 
             (App(f1, a1), App(f2, a2)) =>
-                unifyINST(f1, f2) && unifyINST(a1, a2)
+                begin # for debugger
+                    unifyINST(f1, f2) && unifyINST(a1, a2)
+                end
 
             (Tup(xs1), Tup(xs2)) =>
                 all(zip(xs1, xs2)) do (lhs, rhs)
@@ -303,46 +315,42 @@ function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=n
             (Forall{N1}(ns1, p1) where N1, Forall{N2}(ns2, p2) where N2) =>
                 N1 === N2 &&
                 (begin
-                    pt = Pair{Symbol, HMT}
-                    subst1 = Dict{Symbol, Var}(a => new_tvar() for a in ns1)
-                    genlevel = length(genvar_links)
-                    subst2 = Dict{Symbol, Var}(a => new_genvar(a) for a in ns2)
-                    generic = fresh(subst2, p2)
+                    subst1 = Dict{UN, Var}(a => new_tvar() for a in ns1)
+                    generic = p2
                     unify(fresh(subst1, p1), generic) || return false
 
                     generic = prune(generic)
-                    remap2 = Dict{Var, Fresh}(v => Fresh(k) for (k, v) in subst2)
-                    remap1 = Dict{Var, Fresh}()
+                    remap2 = Bound[Bound(n) for n in ns2]
+                    remap1 = Dict{Bound, Bound}()
+                    
                     for (k, v) in subst1
                         v = prune(v)
-                        haskey(remap2, v) || return false
+                        v in remap2 || return false
                         haskey(remap1, v) && return false
-                        remap1[v] = Fresh(k)
-                    end
-                    backmap1 = Dict{Var, Fresh}()
-                    backmap2 = Dict{Var, Fresh}()
-
-                    unlink(genlevel) do v::Var, i::Var
-                        backmap1[i] = remap1[v]
-                        backmap2[i] = remap2[v]
+                        remap1[v] = Bound(k)
                     end
 
+                    backmap1 = Dict{Bound, Bound}()
+                    backmap2 = Dict{Bound, Bound}()
+
+                    for un in ns2
+                        unlink(un) do i::UInt
+                            backmap1[Var(i)] = remap1[Bound(un)]
+                            backmap2[Var(i)] = Bound(un)
+                        end
+                    end
+                    
                     unify(subst(backmap2, p2), p2) &&
                     unify(subst(backmap1, p1), p1)
                 end)
 
-            (Var(Refvar(i) && ai), b) ||
-            (b, Var(Refvar(i) && ai)) =>
+            (Var(i && ai), b) ||
+            (b, Var(i && ai)) =>
             
                 if occur_in(ai, b)
                     throw(IllFormedType("a = a -> b"))
                 else
-                    @match b begin
-                        Genvar(genlevel, _) =>
-                            push!(genvar_links[genlevel], i)
-                        _ => nothing
-                    end
-                    tctx[i] = b
+                    link!(i, b)
                     true
                 end
 
@@ -365,9 +373,9 @@ function mk_tcstate(tctx::Vector{HMT}, new_tvar_hook::Union{Nothing, Function}=n
      tctx = tctx,
      new_tvar = new_tvar,
      new_tvar_id = new_tvar_id,
-     genvar_links = genvar_links,
      unlink = unlink,
      occur_in = occur_in,
+     instantiate = instantiate,
      prune = prune)
 
 end
@@ -377,7 +385,7 @@ end
     subst_table = Dict{UInt, Var}()
     function subst(root::HMT)
         @match root begin
-            Var(Refvar(i)) =>
+            Var(i) =>
                 get!(subst_table, i) do
                     small_tc.new_tvar()
                 end
