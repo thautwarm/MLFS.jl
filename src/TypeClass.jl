@@ -31,7 +31,7 @@ function instanceResolve(
     end
 
     tHead = getTConsHead(target)
-    globalImplicits = get!(GlobalTC.globalImplicits, tHead) do
+    globalImplicits = get!(globalTC.globalImplicits, tHead) do
         InstRec[]
     end
     for i in eachindex(globalImplicits)

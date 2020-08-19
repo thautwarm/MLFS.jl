@@ -50,7 +50,7 @@ end
 function applyExplicits(e::ExprImpl, explicits::Vector{Expr}, targety::HMT, ln::LineNumberNode)
     for explicit in explicits
         exp = Expr(ln, nothing, e)
-        e = EApp(e, explicit)
+        e = EApp(exp, explicit)
     end
     Expr(ln, targety, e)
 end

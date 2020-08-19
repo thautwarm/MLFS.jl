@@ -47,6 +47,8 @@ include("AST/SurfBuild.jl")
 include("TypeClass.jl")
 include("Infer.jl")
 
+include("TypeErasure.jl")
+include("Compiler/ToJulia.jl")
 # Write your package code here.
 
 end
