@@ -8,8 +8,7 @@ function instanceResolve(
     target = tcstate.prune(target)
 
     candicates = Pair{InstRec, Vector{HMT}}[]
-    for i in eachindex(localImplicits)
-        rec = localImplicits[i]
+    for rec in localImplicits
         if !rec.isPruned
             rec.t = tcstate.prune(rec.t)
         end

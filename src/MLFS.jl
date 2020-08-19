@@ -1,6 +1,7 @@
 module MLFS
 using MLStyle
 using Setfield
+using DataStructures: list, cons, nil, LinkedList
 
 struct CFunc{A, B}
     f :: Function

@@ -13,7 +13,7 @@ mutable struct InstRec
     isPruned :: Bool     # is the instance type pruned?
 end
 
-const InstResolCtx = Vector{InstRec}
+const InstResolCtx = LinkedList{InstRec}
 
 const arrowClass = Nom(:arrow_class)
 const generalClass = Nom(:general_class)
@@ -30,14 +30,14 @@ getTConsHead(h::HMT) =
 struct GlobalTC
     tcstate :: TCState
     count :: Ref{UInt}
-    globalImplicits :: Dict{Nom, InstResolCtx}
+    globalImplicits :: Dict{Nom, Vector{InstRec}}
     queries :: Vector{Pair{String, HMT}}
 end
 
 Base.show(io::IO, ::GlobalTC) = Base.show(io, "<GlobalTC>")
 
 Base.empty(::Type{GlobalTC}) =
-    GlobalTC(mk_tcstate(HMT[]), Ref(UInt(0)), Dict{Nom, InstanceNotFound}(), Pair{String, HMT}[])
+    GlobalTC(mk_tcstate(HMT[]), Ref(UInt(0)), Dict{Nom, Vector{InstRec}}(), Pair{String, HMT}[])
 
 function show_hints(globalTC::GlobalTC)
     prune = globalTC.tcstate.prune
@@ -56,7 +56,7 @@ Base.empty(::Type{LocalTC}) =
     LocalTC(
         Store{Symbol, HMT}(),
         Store{Symbol, Symbol}(),
-        InstRec[],
+        nil(InstRec),
         LineNumberNode(1, :unknown))
 
 const αβ = UInt8[('a':'z')...]
