@@ -57,8 +57,25 @@ using MLFS.HM
         choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
         choose_id′ =
             choose(id).?(stronger_assumptions_3)
-            
 
+        choose_id′ :: ((Fn[a, a] where a) -> (Int -> Int))
+            choose_id′ = (choose(id)).?(stronger_assumptions_4)
+  
+    
+        choose_id′′ :: ((a where a) -> (Int -> Int))
+        choose_id′′ = choose_id′
+
+        choose_id′ :: ((Fn[a, a] where a) -> (Fn[a, a] where a))
+            choose_id′ = (choose(id)).?(stronger_assumptions_5)
+
+        choose_id′′ :: ((a where a) -> (Int -> Int))
+        choose_id′′ =
+            let choose_id_ :: ((Fn[a, a] where a) -> (Int -> Int)),
+                choose_id_ = choose(id)
+                
+                choose_id_
+            end
+    
         # choose_id′ :: ((Int -> Int) -> (Int -> Int))
         # choose_id′ = choose_id
 

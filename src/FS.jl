@@ -14,6 +14,13 @@ end
     NoPropKind
 end
 
+Base.:!(i::TypeInfo) =
+    @match i begin
+        InstTo(x) => InstFrom(x)
+        InstFrom(x) => InstTo(x)
+        NoProp => NoProp
+    end
+
 Base.:!(i::TypeInfoKind) =
     @match i begin
         InstToKind => InstFromKind
