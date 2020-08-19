@@ -8,7 +8,7 @@ export applyImplicits, applyExplicits
 using Setfield: @set
 abstract type ExprImpl end
 
-struct Expr
+@as_record struct Expr
     ln :: LineNumberNode
     ty :: Union{Nothing, HMT}
     expr :: ExprImpl
@@ -53,6 +53,34 @@ function applyExplicits(e::ExprImpl, explicits::Vector{Expr}, targety::HMT, ln::
         e = EApp(e, explicit)
     end
     Expr(ln, targety, e)
+end
+
+function gTrans(self::Function, root::Decl)
+    @match root begin
+        Perform(impl) => Perform(self(impl))
+        Assign(sym, t, impl) => Assign(sym, t, self(impl))
+    end
+end
+
+function gTrans(self::Function, root::Expr)
+    self(root.expr)
+end
+
+function gTrans(self::Function, root::ExprImpl)
+    @match root begin
+        ETypeVal() || EExt() || EVal() || EVar() ||
+        EChar() || EStr() || EBool() || EFloat() || EInt() =>
+           root
+
+        ELet(decls, expr) =>
+            ELet(IR.Decl[self(decl) for decl in decls], self(expr))
+        EITE(a1, a2, a3) =>
+            EITE(self(a1), self(a2), self(a3))
+        EFun(s, e) => EFun(s, self(e))
+        EApp(f, a) => EApp(self(f), self(a))
+        ETup(xs) => ETup(IR.Expr[self(x) for x in xs])
+        EIm(expr, t, insts) => EIm(self(expr), t, insts)
+    end
 end
 
 end # module

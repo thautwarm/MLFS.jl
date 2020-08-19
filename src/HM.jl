@@ -448,7 +448,7 @@ function less_than_under_evidences(lhs::HMT, rhs ::HMT)
             _ => gTrans(subst, root)
         end
     end
-    small_tc.unifyImplicits(subst(lhs), subst(rhs), evidences), evidences
+    small_tc.unifyImplicits!(subst(lhs), subst(rhs), evidences), evidences
 end
 
 end

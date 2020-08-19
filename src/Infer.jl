@@ -1,4 +1,4 @@
-export inferType
+export inferType, inferModule, inferExpr, inferDecls
 
 function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
     ln = localTC.ln
@@ -69,6 +69,10 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
 end
 
 const _InferPostponed = CFunc{IR.Decl, Tuple{}}
+
+function inferModule(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
+    [f() for f in inferDecls(globalTC, localTC, decls, Val(true))[1]]
+end
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
     inferDecls(globalTC, localTC, decls, Val(false))
