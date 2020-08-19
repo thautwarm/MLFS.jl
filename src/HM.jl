@@ -28,7 +28,6 @@ Base.show(io::IO, unique_name::UN) =
     Arrow(from::HMT, to::HMT)
     Tup{N}::(NTuple{N,HMT}) => HMT
     Forall{N}::(NTuple{N, UN}, HMT) => HMT
-    Implicit()
 end
 
 need_parens(hmt::HMT) =
