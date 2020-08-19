@@ -1,8 +1,28 @@
 module MLFS
 using MLStyle
 using Setfield
-using FunctionWrappers
-CFunc = FunctionWrappers.FunctionWrapper
+
+struct CFunc{A, B}
+    f :: Function
+end
+
+_targs = [Symbol(:a_, i) for i = 1:3]
+_args = [Symbol(:t_, i) for i = 1:3]
+function (f::CFunc{R, Tuple{}})()::R where R
+    f.f()
+end
+for i in 1:3
+    let args = _args[1:i],
+        targs = _targs[1:i],
+        params = [:($a :: $t) for (a, t) in zip(args, targs)]
+
+        Base.eval(MLFS, quote
+            function (f::CFunc{R, Tuple{$(targs...)}})($(params...))::R where {R, $(targs...)}
+                f.f($(args...))
+            end
+        end)
+    end
+end
 
 include("HM.jl")
 using .HM

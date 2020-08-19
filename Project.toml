@@ -4,7 +4,6 @@ authors = ["thautwarm <twshere@outlook.com> and contributors"]
 version = "0.1.0"
 
 [deps]
-FunctionWrappers = "069b7b12-0de2-55c6-9aab-29f3d0a68a2e"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
