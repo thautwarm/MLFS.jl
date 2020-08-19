@@ -11,6 +11,7 @@ abstract type Expr end
     TApp(TyExpr, TyExpr)
     TArrow(TyExpr, TyExpr)
     TTuple(Vector{TyExpr})
+    TImplicit(TyExpr)
     TVar(Symbol)
     TSym(Symbol)
     TNew(Symbol)

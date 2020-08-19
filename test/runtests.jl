@@ -39,35 +39,35 @@ using MLFS.HM
         choose = x -> y -> x
 
         choose_id = choose(id)
-        choose_id.?(hint_choose_id)
+        # choose_id.?(hint_choose_id)
         
         J :: Fn[a, Fn[b, (a, b)] where b] where a
         J = x -> y -> (x, y)
 
         # c :: Fn[a, (Int, a)] where a
         c = J(1)
-        c.?(hint_c)
+        # c.?(hint_c)
 
-        pair = (c(1), c("a")).?(hint_pair)
+        pair = (c(1), c("a")) # .?(hint_pair)
 
         choose_id′ :: ((Int -> Int) -> (Int -> Int))
-        choose_id′ = (choose(id)).?(stronger_assumptions_1)
+        choose_id′ = (choose(id)) # .?(stronger_assumptions_1)
 
-        choose_id′ = (choose(id)).?(stronger_assumptions_2)
+        choose_id′ = (choose(id)) # .?(stronger_assumptions_2)
 
         choose_id′ :: Fn[Fn[c, c], Fn[c, c]] where c
         choose_id′ =
-            choose(id).?(stronger_assumptions_3)
+            choose(id) # .?(stronger_assumptions_3)
 
         choose_id′ :: ((Fn[a, a] where a) -> (Int -> Int))
-            choose_id′ = (choose(id)).?(stronger_assumptions_4)
+            choose_id′ = (choose(id)) # .?(stronger_assumptions_4)
   
     
         choose_id′′ :: ((a where a) -> (Int -> Int))
         choose_id′′ = choose_id′
 
         choose_id′ :: ((Fn[a, a] where a) -> (Fn[a, a] where a))
-            choose_id′ = (choose(id)).?(stronger_assumptions_5)
+            choose_id′ = (choose(id)) # .?(stronger_assumptions_5)
 
         choose_id′′ :: ((a where a) -> (Int -> Int))
         choose_id′′ =
@@ -83,7 +83,7 @@ using MLFS.HM
         int_functional :: Fn[Fn[Int, Int], Int]
         int_functional = f -> f(1)
 
-        int_number = int_functional(id).?(app_functional)
+        int_number = int_functional(id) # .?(app_functional)
 
         Vec :: Type[NewType(Vec)]
         Vec = Vec
@@ -93,8 +93,64 @@ using MLFS.HM
             T -> T[]
         end)(A)
 
-        mkVec.?(vec)
+        vecLen :: (Vec[A] -> Int) where A
+        vecLen = @julia begin
+            (x::Vector) -> length(x)
+        end
+
+        # mkVec.?(vec)
+
+        imVec :: implicit[Vec[Int]]
+        imVec = mkVec(())
+        # imVec.?(imVec)
+
+        ctxVecLen :: Fn[implicit[Vec[Int]], Int]
+        ctxVecLen =  x -> vecLen(x)
+
+        (+) :: Fn[Int, Fn[Int, Int]]
+        (+) = @julia(+)
+
+        ctxOp :: Fn[implicit[Vec[Int]], Int]
+        ctxOp = vec -> ctxVecLen.?("implicit_instance")
+
+        ctxVecLen.?("implicit_meth")
+
         
+
+        # List :: Type[NewType(List)]
+        # List = List
+
+        # Nil :: List[A] where A
+        # Nil = @julia begin
+        #     ()
+        # end
+
+        # Cons :: (A -> List[A] -> List[A]) where A
+        # Cons = (@julia begin
+        #     t -> x -> y -> (x :: t, y)
+        # end)(A)
+
+        # Cons.?(cons)
+        # Addable :: Type[NewType(Add1)]
+
+        # constructAddable :: ((A -> A -> A) -> Addable[A]) where A
+        # constructAddable = @julia begin
+        #     function constructAddable(a::Any)
+        #         a
+        #     end
+        # end
+
+        # getFieldA :: implict[Field[constructAddable[A], :plus, (A -> A -> A)] where A]
+        # getFieldA = @julia begin
+        #     function getFieldA(a::Any)
+        #         a
+        #     end
+        # end
+
+        # add :: Fn[implicit[Addable[A]], A -> A -> A] where A
+        # add = addable -> l -> r ->
+        #     addable.plus(l)(r)
+
     end
     
     for f in MLFS.inferDecls(g, l, stmts)[1]

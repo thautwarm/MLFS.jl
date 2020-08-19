@@ -3,12 +3,13 @@ module IR
 using MLStyle
 using MLFS.HM: HMT
 import MLFS.HM
+export applyImplicits
 
 abstract type ExprImpl end
 
 struct Expr
     ln :: LineNumberNode
-    ty :: HMT
+    ty :: Union{Nothing, HMT}
     expr :: ExprImpl
 end
 
@@ -35,8 +36,13 @@ FloatType = Union{Float16, Float32, Float64}
     EStr(String)
     EChar(Char)
     EBool(Bool)
-    EInst(HMT)
-    # specialization
-    ETApp(Expr, Vector{Pair{Symbol, HMT}})
+    EIm(Expr, HMT)
+end
+
+function applyImplicits(e::ExprImpl, implicits::Vector{<:HMT}, finalty::HMT, ln::LineNumberNode)
+    for im in implicits
+        e = EIm(Expr(ln, nothing, e), im)
+    end
+    Expr(ln, finalty, e)
 end
 end # module

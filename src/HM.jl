@@ -1,6 +1,6 @@
 module HM
 export HMT, TVar, mk_tcstate, UN, VerboseUN
-export Var, Nom, Bound, Var, Arrow, App, Tup, Forall
+export Var, Nom, Bound, Var, Arrow, App, Tup, Forall, Implicit
 export gTrans, gTransCtx, gCheck
 export tvar_of_int, int_of_tvar, IllFormedType
 export ⪯
@@ -12,6 +12,8 @@ const VerboseUN = Ref(false)
 mutable struct UN # unique name
     name :: Symbol
 end
+
+const noImplicits = Val(false)
 
 Base.show(io::IO, unique_name::UN) =
     if VerboseUN[]
@@ -28,6 +30,8 @@ Base.show(io::IO, unique_name::UN) =
     Arrow(from::HMT, to::HMT)
     Tup{N}::(NTuple{N,HMT}) => HMT
     Forall{N}::(NTuple{N, UN}, HMT) => HMT
+
+    Implicit(HMT)
 end
 
 need_parens(hmt::HMT) =
@@ -83,6 +87,8 @@ Base.show(io::IO, hmt::HMT) =
         print(io, join(string.(ns), " "), ".")
         Base.show(io, t)
         return
+    @case Implicit(t)
+        print(io, "implicit[$t]")
     end
 
 
@@ -93,6 +99,7 @@ function gTrans(self::Function, root::HMT)
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
         Tup(xs) => Tup(Tuple(self(x) for x in xs))
         Forall(ns, p) => Forall(ns, self(p))
+        Implicit(x) => Implicit(self(x))
     end
 end
 
@@ -104,6 +111,7 @@ function gTransCtx(self′::Function, ctx::Ctx, root::HMT) where Ctx
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
         Tup(xs) => Tup(Tuple(self(x) for x in xs))
         Forall(ns, p) => Forall(ns, self(p))
+        Implicit(x) => Implicit(self(x))
     end
 end
 
@@ -114,6 +122,7 @@ function gCheck(self::Function, root::HMT)
         Arrow(arg, ret) => self(arg) && self(ret)
         Tup(xs) => all(self(x) for x in xs)
         Forall(_, p) => self(p)
+        Implicit(x) => self(x)
     end
 end
 
@@ -264,6 +273,32 @@ function mk_tcstate(tctx::Vector{HMT})
         end
     end
 
+    function unifyImplicits!(lhs::HMT, rhs::HMT, implicits::Vector{HMT})
+        lhs = prune(lhs)
+        rhs = prune(rhs)
+        lhs === rhs && return true
+        
+        @match lhs, rhs begin
+            (Forall(_, lhs), _) => unifyImplicits!(lhs, rhs, implicits)
+            (Var(_), _) ||
+            (_, Var(_)) => 
+                unifyINST(lhs, rhs)
+
+            (_, Forall()) =>
+                begin    
+                    unifyImplicits!(lhs, instantiate(rhs), implicits)
+                end
+            
+            (_, Arrow(Implicit(im), rhs)) =>
+                begin # for debugger
+                    push!(implicits, im)
+                    unifyImplicits!(lhs, rhs, implicits)
+                end
+            
+            _ => unifyINST(lhs, rhs)
+        end
+    end
+
     function unifyINST(lhs::HMT, rhs::HMT)
         lhs = prune(lhs)
         rhs = prune(rhs)
@@ -288,6 +323,8 @@ function mk_tcstate(tctx::Vector{HMT})
                     unifyINST(lhs, instantiate(rhs))
                 end
             
+            (_, Implicit(rhs)) => unifyINST(lhs, rhs)
+            (Implicit(lhs), _) => unifyINST(lhs, rhs)
             (Arrow(a1, r1), Arrow(a2, r2)) =>
                 begin # for debugger
                     unifyINST(a2, a1) && unifyINST(r1, r2)
@@ -369,6 +406,7 @@ function mk_tcstate(tctx::Vector{HMT})
     end
 
     (unifyINST = unifyINST,
+     unifyImplicits! = unifyImplicits!,
      unify = unify,
      tctx = tctx,
      new_tvar = new_tvar,

@@ -7,6 +7,7 @@ function surf_type(ex)
     @match ex begin
         QuoteNode(a::Symbol) => Surf.TSym(a)
         :(NewType($(a::Symbol))) => Surf.TNew(a)
+        :(implicit[$t]) => Surf.TImplicit(surf_type(t))
         :(Fn[$a, $b]) => Surf.TArrow(surf_type(a), surf_type(b))
         :($a.?($label)) => Surf.TQuery(string(label), surf_type(a))
         :($f[$a]) => Surf.TApp(surf_type(f), surf_type(a))
