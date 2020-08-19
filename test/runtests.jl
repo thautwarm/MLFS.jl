@@ -18,10 +18,10 @@ using MLFS.HM
     l = @set l.symmap = l.symmap[
             :f => :f_0xa1
         ]
-    println(inferType(g, l, t))
+    # println(inferType(g, l, t))
     exp = @surf_expr f(1)
-    pprintln(exp)
-    pprintln(MLFS.inferExpr(g, l, exp)(NoProp))
+    # pprintln(exp)
+    # pprintln(MLFS.inferExpr(g, l, exp)(NoProp))
     # Write your tests here.
 
     stmts = @surf_toplevel begin
@@ -38,11 +38,23 @@ using MLFS.HM
         choose = x -> y -> x
 
         choose_id = choose(id)
+        choose_id.?(hint_choose_id)
+        
+        J :: Fn[a, Fn[b, (a, b)] where b] where a
+        J = x -> y -> (x, y)
+
+        # c :: Fn[a, (Int, a)] where a
+        c = J(1)
+        c.?(hint_c)
+
+        pair = (c(1), c("a")).?(hint_pair)
     end
-    pprintln([f() for f in MLFS.inferDecls(g, l, stmts)[1]])
-    for (i, each) in enumerate(g.tcstate.tctx)
-        println(i, ": ", each)
+    
+    for f in MLFS.inferDecls(g, l, stmts)[1]
+        f()
     end
 
+    show_hints(g)
 
+    
 end
