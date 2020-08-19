@@ -3,7 +3,7 @@ language: julia
 notifications:
   email: false
 julia:
-  - 1.0
+  - 1.4
   - 1.5
   - nightly
 os:
@@ -25,7 +25,7 @@ jobs:
       os: osx
   include:
     - stage: Documentation
-      julia: 1
+      julia: 1.5
       script: |
         julia --project=docs -e '
           using Pkg
