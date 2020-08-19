@@ -12,10 +12,10 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
             push!(globalTC.queries, label => ret)
             ret
         end
-    
+
     @case Surf.TSym(a)
         T(Nom(a))
-    
+
     @case Surf.TVar(:_)
         T(globalTC.tcstate.new_tvar())
 
@@ -39,7 +39,7 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
         any(tvars) do s; s isa Symbol end ||
             throw(MLError(ln, InvalidSyntax("$exp")))
         let typeEnv = localTC.typeEnv
-            
+
             uniqueNames = [UN(k) for k in tvars]
             typeEnv = typeEnv[[un.name => T(Bound(un)) for un in uniqueNames]]
             localTC = @set localTC.typeEnv = typeEnv
@@ -95,7 +95,7 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
             annTy = inferType(globalTC, localTC, tyExpr)
             localTC = @set localTC.typeEnv = localTC.typeEnv[sym => annTy]
             @match annTy begin
-                Forall(ns, _) => begin 
+                Forall(ns, _) => begin
                     annotated[sym] = ns
                 end
                 _ => begin annotated[sym] = () end
@@ -120,7 +120,7 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
             end
             # @info :annotation sym annTy
             let localTC = if isempty(typevars)
-                            localTC 
+                            localTC
                         else
                            @set localTC.typeEnv =
                                 localTC.typeEnv[[un.name => T(Bound(un)) for un in typevars]]
@@ -159,8 +159,10 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
     unify = tcstate.unify
     prune = tcstate.prune
     new_tvar = tcstate.new_tvar
+    localImplicits = localTC.localImplicits
+    ln = localTC.ln
 
-    @inline function applyTI(ti::TypeInfo, me::HMT, ln)
+    @inline function applyTI(ti::TypeInfo, me::HMT)
         local implicits
         implicits = HMT[]
         @match ti begin
@@ -179,25 +181,25 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         end
     end
 
-    @inline function prop(varTy::HMT, eImpl::IR.ExprImpl, ln::LineNumberNode)
+    @inline function prop(varTy::HMT, eImpl::IR.ExprImpl)
         function propInner(ti::TypeInfo)
             local implicits
             varTy = prune(varTy)
-            varTy, implicits, _ = applyTI(ti, varTy, ln)
-            IR.applyImplicits(eImpl, implicits, varTy, ln)
+            varTy, implicits, _ = applyTI(ti, varTy)
+            IR.applyImplicits(eImpl, implicits, varTy, ln, localImplicits)
         end
     end
 
     @switch expr begin
     @case Surf.EExt(jlex)
-        let ln = localTC.ln
-            function (ti::TypeInfo)
-                local t, implicits
-                t = new_tvar()
-                t, implicits, _ = applyTI(ti, t, ln)
-                IR.applyImplicits(IR.EExt(jlex), implicits, t, ln)
-            end
+
+        function (ti::TypeInfo)
+            local t, implicits
+            t = new_tvar()
+            t, implicits, _ = applyTI(ti, t)
+            IR.applyImplicits(IR.EExt(jlex), implicits, t, ln, localImplicits)
         end
+
     @case Surf.EQuery(label, e)
         exprTyProp = inferExpr(globalTC, localTC, e)
         queries = globalTC.queries
@@ -213,31 +215,29 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
 
         let elty = CFunc{IR.Expr, Tuple{TypeInfo}},
             props = elty[elty(inferExpr(globalTC, localTC, x)) for x in xs],
-            n_xs = length(xs),
-            ln = localTC.ln
+            n_xs = length(xs)
 
             function propTup(ti::TypeInfo)
                 local ts, tupT, elts, implicits
                 ts = [new_tvar() for i = 1:n_xs]
                 tupT = Tup(Tuple(ts))
-                tupT, implicits, makeTI = applyTI(ti, tupT, ln)
+                tupT, implicits, makeTI = applyTI(ti, tupT)
                 elts = IR.Expr[(prop(makeTI(t))) for (prop, t) in zip(props, ts)]
-                IR.applyImplicits(IR.ETup(elts), implicits, tupT, ln)
+                IR.applyImplicits(IR.ETup(elts), implicits, tupT, ln, localImplicits)
             end
         end
     @case Surf.EApp(f, arg)
         let fProp = inferExpr(globalTC, localTC, f),
-            argProp = inferExpr(globalTC, localTC, arg),
-            ln = localTC.ln
+            argProp = inferExpr(globalTC, localTC, arg)
 
             function propApp(ti::TypeInfo)
                 local argT, retT, mkTI, eF, eArg, implicits
                 argT = new_tvar()
                 retT = new_tvar()
-                retT, implicits, mkTI = applyTI(ti, retT, ln)
+                retT, implicits, mkTI = applyTI(ti, retT)
                 eF = fProp(InstTo(Arrow(argT, retT)))
                 eArg = argProp(InstTo(argT))
-                IR.applyImplicits(IR.EApp(eF, eArg), implicits, retT, ln)
+                IR.applyImplicits(IR.EApp(eF, eArg), implicits, retT, ln, localImplicits)
             end
         end
 
@@ -248,23 +248,22 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         localTC = @set localTC.typeEnv = localTC.typeEnv[n => argT]
         retT = new_tvar()
         let exprTyProp = inferExpr(globalTC, localTC, expr),
-            ln = localTC.ln,
             gensym = gensym
 
             function propFun(ti::TypeInfo)
                 local arrowT, eBody, implicits
-                arrowT, implicits, _ = applyTI(ti, Arrow(argT, retT), ln)
+                arrowT, implicits, _ = applyTI(ti, Arrow(argT, retT))
                 eBody = exprTyProp(InstTo(retT))
                 IR.applyImplicits(
                     IR.EFun(gensym, eBody),
-                    implicits, arrowT, ln)
+                    implicits, arrowT, ln, localImplicits)
             end
         end
 
     @case Surf.ELet(decls, expr)
         let (loweredDeclFs, localTC) = inferDecls(globalTC, localTC, decls),
-            exprTyProp = inferExpr(globalTC, localTC, expr),
-            ln = localTC.ln
+            exprTyProp = inferExpr(globalTC, localTC, expr)
+
             function propLet(t::TypeInfo)
                 local eBody, loweredDecls, eI
                 eBody = exprTyProp(t)
@@ -278,18 +277,17 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         let condProp = inferExpr(globalTC, localTC, cond),
             arm1Prop = inferExpr(globalTC, localTC, arm1),
             arm2Prop = inferExpr(globalTC, localTC, arm2),
-            new_tvar = globalTC.tcstate.new_tvar,
-            ln = localTC.ln
+            new_tvar = globalTC.tcstate.new_tvar
 
             function propITE(ti::TypeInfo)
                 local t, eArm1, eArm2, eCond, eI, mkTI, implicits
-                t, implicits, mkTI = applyTI(ti, new_tvar(), ln)
+                t, implicits, mkTI = applyTI(ti, new_tvar())
                 ti = mkTI(t)
                 eArm1 = arm1Prop(ti)
                 eArm2 = arm2Prop(ti)
                 eCond = condProp(InstTo(boolT))
                 eI = IR.EITE(eCond, eArm1, eArm2)
-                IR.applyImplicits(eI, implicits, t, eI)
+                IR.applyImplicits(eI, implicits, t, eI, localImplicits)
             end
         end
 
@@ -301,28 +299,27 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             ::Char => (IR.EChar(val), charT)
             ::Bool => (IR.EBool(val), boolT)
         end
-        prop(eT, eValI, localTC.ln)
+        prop(eT, eValI)
+
     @case Surf.EVar(n)
         n in localTC.typeEnv || throw(MLError(localTC.ln, UnboundVar(n)))
         varT = prune(localTC.typeEnv[n])
         @match varT begin
             T(_) && t =>
-                let ln = localTC.ln
-                    function propTVar(ti::TypeInfo)
-                        @match ti begin
-                            InstFrom(t′) || InstTo(t′) =>
-                                begin
-                                    unify(t′, t) || throw(MLError(ln, UnificationFail))
-                                end
-                            _ => nothing
-                        end
-                        
-                        IR.Expr(ln, t, IR.ETypeVal(t))
+                function propTVar(ti::TypeInfo)
+                    @match ti begin
+                        InstFrom(t′) || InstTo(t′) =>
+                            begin
+                                unify(t′, t) || throw(MLError(ln, UnificationFail))
+                            end
+                        _ => nothing
                     end
+
+                    IR.Expr(ln, t, IR.ETypeVal(t))
                 end
             _ =>
                 let gensym = localTC.symmap[n]
-                    prop(varT, IR.EVar(gensym), localTC.ln)
+                    prop(varT, IR.EVar(gensym))
                 end
         end
     end

@@ -3,6 +3,7 @@ module IR
 using MLStyle
 using MLFS.HM: HMT
 import MLFS.HM
+import MLFS: InstResolCtx
 export applyImplicits, applyExplicits
 using Setfield: @set
 abstract type ExprImpl end
@@ -36,12 +37,12 @@ FloatType = Union{Float16, Float32, Float64}
     EStr(String)
     EChar(Char)
     EBool(Bool)
-    EIm(Expr, HMT)
+    EIm(Expr, HMT, InstResolCtx)
 end
 
-function applyImplicits(e::ExprImpl, implicits::Vector{<:HMT}, finalty::HMT, ln::LineNumberNode)
+function applyImplicits(e::ExprImpl, implicits::Vector{<:HMT}, finalty::HMT, ln::LineNumberNode, localImplicits::InstResolCtx)
     for im in implicits
-        e = EIm(Expr(ln, nothing, e), im)
+        e = EIm(Expr(ln, nothing, e), im, localImplicits)
     end
     Expr(ln, finalty, e)
 end

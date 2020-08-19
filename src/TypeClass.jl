@@ -1,11 +1,10 @@
 function instanceResolve(
         globalTC::GlobalTC,
-        localTC::LocalTC,
+        localImplicits::InstResolCtx,
         target::HMT,
         ln::LineNumberNode,
     )::IR.Expr
     tcstate = globalTC.tcstate
-    localImplicits = localTC.localImplicits
     target = tcstate.prune(target)
 
     candicates = Pair{InstRec, Vector{HMT}}[]
@@ -22,7 +21,7 @@ function instanceResolve(
     !isempty(candicates) && begin
         if length(candicates) === 1
             rec, evidences = candicates[1]
-            explicits = [instanceResolve(globalTC, localTC, evi, ln) for evi in evidences]
+            explicits = [instanceResolve(globalTC, localImplicits, evi, ln) for evi in evidences]
             return IR.applyExplicits(IR.EVar(rec.gensym), explicits, targety, ln)
         else
             throw(MLError(
@@ -49,7 +48,7 @@ function instanceResolve(
     !isempty(candicates) && begin
         if length(candicates) === 1
             rec, evidences = candicates[1]
-            explicits = [instanceResolve(globalTC, localTC, evi, ln) for evi in evidences]
+            explicits = [instanceResolve(globalTC, localImplicits, evi, ln) for evi in evidences]
             return IR.applyExplicits(IR.EVar(rec.gensym), explicits, targety, ln)
         else
             throw(MLError(
