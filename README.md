@@ -5,6 +5,22 @@
 [![Build Status](https://travis-ci.com/thautwarm/MLFS.jl.svg?branch=master)](https://travis-ci.com/thautwarm/MLFS.jl)
 [![Coverage](https://codecov.io/gh/thautwarm/MLFS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/thautwarm/MLFS.jl)
 
+MLFS is a type system to equip ML languages with Higher Rank Types. While having good expressivity, it also keeps the system as **simple** as the vanilla Damas-Hindley-Milner type system.
+
+Instead of annotating types at function parameters in HMF, you can annotate types in the top level, just like what in Haskell:
+```
+val mk_pair : (forall a. a) -> (Int, Str)
+let mk_pair = fun f -> (f 1, f "1")
+```
+
+MLFS works well with other important features:
+
+This repo is an implementation of MLFS type system with
+
+- Type classes(implicit arguments)
+- Scoped type variables
+
+## About
 
 So far the following programs can be correctly inferred/checked.
 
@@ -33,8 +49,6 @@ in MLFS you'll have to write this with explicit annotation.
 val choose_id : forall c. (c -> c) -> (c -> c)
 let choose_id = choose id
 ```
-
-Support for Type classes is WIP.
 
 
 ## Known Restrictions
@@ -68,7 +82,7 @@ let choose_id = choose id
 
 Above annotation for `choose_id` is correct, however cannot get correctly checked in MLFS.
 
-This is because the following equation is difficult to solve:
+This is because the following inequation is difficult to solve:
 
 ```ocaml
 monotype_var ->(forall a.a) -> (monotype0 -> monotype0) 
