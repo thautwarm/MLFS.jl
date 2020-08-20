@@ -3,12 +3,12 @@ using PrettyPrint
 using Setfield
 using MLFS.HM
 using MLStyle
-
+it = Symbol(:int, sizeof(Int) * 8)
 g = empty(GlobalTC)
 l = empty(LocalTC)
 l = @set l.typeEnv = l.typeEnv[
     [
-    :Int => T(Nom(:int64)),
+    :Int => T(Nom(it)),
     :Str => T(Nom(:str)),
     :Bool => T(Nom(:bool)),
     :Type => T(Nom(:Type))
