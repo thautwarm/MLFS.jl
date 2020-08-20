@@ -5,15 +5,16 @@ using Setfield
 using MLFS.HM
 
 @testset "MLFS.jl" begin
+    it = Symbol(:int, sizeof(Int) * 8)
     t = Surf.TArrow(Surf.TVar(:Int), Surf.TVar(:Int))
     g = empty(GlobalTC)
     l = empty(LocalTC)
     l = @set l.typeEnv = l.typeEnv[
         [
-        :Int => T(Nom(:int64)),
+        :Int => T(Nom(it)),
         :Str => T(Nom(:str)),
         :Bool => T(Nom(:bool)),
-        :f => Arrow(Nom(:int64), Nom(:int64)),
+        :f => Arrow(Nom(it), Nom(it)),
         :Type => T(Nom(:Type))
         ]
     ]
