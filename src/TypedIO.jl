@@ -237,7 +237,11 @@ macro typedIO(ex)
     esc(typedIO(ex, __module__))
 end
 
-@typedIO LineNumberNode(Int64, Union{Nothing, Symbol})
+@static if VERSION < v"1.5"
+    @typedIO LineNumberNode(Int64, Union{Nothing, String})
+else
+    @typedIO LineNumberNode(Int64, Union{Nothing, Symbol})
+end
 
 function mkAltnertive(head::Type, ts::Type...)
     isempty(ts) && return head
