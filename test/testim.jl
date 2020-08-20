@@ -69,6 +69,6 @@ begin
     pprintln(results)
     pprintln(g.globalImplicits)
     solvedIRs = [postInfer(result) for result in results]
-end; open("test/testim_gen.jl", "w") do f; println(f, "using FunctionWrappers; Fn = FunctionWrappers.FunctionWrapper"); println(f,Expr(:let, Expr(:block),
+end; open("testim_gen.jl", "w") do f; println(f, "using FunctionWrappers; Fn = FunctionWrappers.FunctionWrapper"); println(f,Expr(:let, Expr(:block),
     irToJulia(IR.ELet(solvedIRs,IR.Expr(LineNumberNode(1),nothing, IR.EInt(0))), LineNumberNode(1))))
 end

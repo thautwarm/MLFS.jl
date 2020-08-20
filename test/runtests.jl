@@ -179,6 +179,6 @@ using MLFS.HM
 end
 
 include("testim.jl")
-open("test/testim_gen.jl") do f
+open("testim_gen.jl") do f
     println(read(f, String))
 end
