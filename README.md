@@ -7,7 +7,7 @@
 
 MLFS is a type system to equip ML languages with Higher Rank Types. While having good expressivity, it also keeps the system as **simple** as the vanilla Damas-Hindley-Milner type system.
 
-Instead of annotate types at function parameters in HMF, you can annotate types in the top level, just like what in Haskell:
+Instead of annotating types at function parameters in HMF, you can annotate types in the top level, just like what in Haskell:
 ```
 val mk_pair : (forall a. a) -> (Int, Str)
 let mk_pair = fun f -> (f 1, f "1")
