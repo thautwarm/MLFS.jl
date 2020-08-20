@@ -6,16 +6,21 @@ using MLStyle
 function toVec end
 function fromVec end
 
+toVec(::Type{Any}, x::Symbol) = ["Symbol", string(x)]
 toVec(::Type{Any}, x::Expr) = ["Expr", string(x)]
 toVec(::Type{Any}, x) = string(x)
 
 fromVec(::Type{Any}, x::String) = Some(x)
-fromVec(::Type{Any}, x::Vector) =
-    if (length(x) === 2 && x[1] == "Expr")
+function fromVec(::Type{Any}, x::Vector)
+    length(x) === 2 || return nothing
+    if x[1] == "Expr"
         Some(Meta.parse(x[2]))
+    elseif x[1] == "Symbol"
+        Some(Symbol(x[2]))
     else
         nothing
     end
+end
 
 
 toVec(::Type{Integer}, a::A) where A <: Signed = ["int", sizeof(a), string(a)]

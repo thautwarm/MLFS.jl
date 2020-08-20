@@ -42,8 +42,8 @@ function erasedToJuliaTy(e::ErasedType)
                 :char => :Char
                 _ => :Any
             end
-        ERTuple(xs) => :(Tuple{$(map(!, xs)...)})
-        ERType(t) => :(Type{<: $(!t)})
+        ERTuple(xs) => :Tuple
+        ERType(t) => :Type
         ERAny => :Any
     end
 end
