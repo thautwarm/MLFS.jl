@@ -3,10 +3,10 @@ module IR
 using MLStyle
 using MLFS.HM: HMT
 import MLFS.HM
-import MLFS: InstResolCtx
+import MLFS: InstResolCtx, ExprImpl
+using MLFS.TypedIO: @typedIO
 export applyImplicits, applyExplicits
 using Setfield: @set
-abstract type ExprImpl end
 
 @as_record struct Expr
     ln :: LineNumberNode
@@ -14,31 +14,53 @@ abstract type ExprImpl end
     expr :: ExprImpl
 end
 
+@typedIO Expr(LineNumberNode, Union{Nothing, HMT}, ExprImpl)
+
 @data Decl begin
     Perform(impl::Expr)
     Assign(sym::Symbol, ty::HMT, impl::Expr)
 end
 
-IntType = Union{Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64}
-FloatType = Union{Float16, Float32, Float64}
+@typedIO Decl = begin
+    Perform(Expr)
+    Assign(Symbol, HMT, Expr)
+end
 
-@data ExprImpl begin
+
+@data ExprImpl′ <: ExprImpl begin
     ETypeVal(HMT)
     EExt(Any)
     EVar(Symbol)
-    EVal(Any)
     ELet(Vector{Decl}, Expr)
     EITE(Expr, Expr, Expr)
     EFun(Symbol, Expr)
     EApp(Expr, Expr)
     ETup(Vector{Expr})
-    EInt(IntType)
-    EFloat(FloatType)
+    EInt(Int64, UInt8)
+    EFloat(Float64, UInt8)
     EStr(String)
     EChar(Char)
     EBool(Bool)
     EIm(Expr, HMT, InstResolCtx)
 end
+
+@typedIO ExprImpl = begin
+    ETypeVal(HMT)
+    EExt(Any)
+    EVar(Symbol)
+    ELet(Vector{Decl}, Expr)
+    EITE(Expr, Expr, Expr)
+    EFun(Symbol, Expr)
+    EApp(Expr, Expr)
+    ETup(Vector{Expr})
+    EInt(Int64, UInt8)
+    EFloat(Float64, UInt8)
+    EStr(String)
+    EChar(Char)
+    EBool(Bool)
+    EIm(Expr, HMT, InstResolCtx)
+end
+
 
 function applyImplicits(e::ExprImpl, implicits::Vector{<:HMT}, finalty::HMT, ln::LineNumberNode, localImplicits::InstResolCtx)
     for im in implicits
@@ -68,8 +90,8 @@ end
 
 function gTrans(self::Function, root::ExprImpl)
     @match root begin
-        ETypeVal() || EExt() || EVal() || EVar() ||
-        EChar() || EStr() || EBool() || EFloat() || EInt() =>
+        ETypeVal() || EExt() || EVar() || EChar() ||
+        EStr() || EBool() || EFloat() || EInt() =>
            root
 
         ELet(decls, expr) =>

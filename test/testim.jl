@@ -2,8 +2,11 @@ using MLFS
 using PrettyPrint
 using Setfield
 using MLFS.HM
+using MLFS.TypedIO
 using MLStyle
-it = Symbol(:int, sizeof(Int) * 8)
+using JSON
+
+it = Symbol(:i, sizeof(Int) * 8)
 g = empty(GlobalTC)
 l = empty(LocalTC)
 l = @set l.typeEnv = l.typeEnv[
@@ -29,7 +32,7 @@ stmts = @surf_toplevel begin
     var = fun(1)
 end;
 begin    
-    results = inferModule(g, l, stmts);
+    results = inferModule(g, l, stmts)[1];
 
     prune = g.tcstate.prune
 
@@ -69,6 +72,19 @@ begin
     pprintln(results)
     pprintln(g.globalImplicits)
     solvedIRs = [postInfer(result) for result in results]
-end; open("testim_gen.jl", "w") do f; println(f, "using FunctionWrappers; Fn = FunctionWrappers.FunctionWrapper"); println(f,Expr(:let, Expr(:block),
-    irToJulia(IR.ELet(solvedIRs,IR.Expr(LineNumberNode(1),nothing, IR.EInt(0))), LineNumberNode(1))))
+end;
+ir = IR.ELet(solvedIRs,IR.Expr(LineNumberNode(1),nothing, IR.EInt(0, 8)))
+
+open("testim_gen_dump.json", "w") do f
+    write(f, json(toVec(IR.ExprImpl, ir)))
+end
+
+
+a = open("testim_gen_dump.json") do f
+    fromVec(IR.ExprImpl, JSON.Parser.parse(read(f, String)))
+end
+println(a)
+
+open("testim_gen.jl", "w") do f; println(f, "using FunctionWrappers; Fn = FunctionWrappers.FunctionWrapper"); println(f,Expr(:let, Expr(:block),
+    irToJulia(ir, LineNumberNode(1))))
 end

@@ -1,22 +1,22 @@
 using FunctionWrappers; Fn = FunctionWrappers.FunctionWrapper
 let
     #= line 1 =#
-    b_implicitStr::String = "114514"::String
-    c_implicitInt::Fn{Int64, Tuple{String}} = Fn{Int64, Tuple{String}}((x->begin
-                    #= /home/tainez/github/MLFS/test/testim.jl:23 =#
+    var"|main|b_implicitStr"::String = "114514"::String
+    var"|main|c_implicitInt"::Function = (x->begin
+                    #= /home/tainez/github/MLFS/test/testim.jl:26 =#
                     parse(Int, x)
-                end))
-    var"d_+"::Fn{Int64, Tuple{Tuple{Int64, Int64}}} = Fn{Int64, Tuple{Tuple{Int64, Int64}}}((((x, y),)->begin
-                    #= /home/tainez/github/MLFS/test/testim.jl:25 =#
+                end)::Function
+    var"|main|d_+"::Function = (((x, y),)->begin
+                    #= /home/tainez/github/MLFS/test/testim.jl:28 =#
                     x + y
-                end))
-    e_fun::Fn{Fn{Int64, Tuple{Int64}}, Tuple{Int64}} = Fn{Fn{Int64, Tuple{Int64}}, Tuple{Int64}}(function (f_x,)
-                #= /home/tainez/github/MLFS/test/testim.jl:27 =#
-                Fn{Int64, Tuple{Int64}}(function (g_y,)
-                        #= /home/tainez/github/MLFS/test/testim.jl:27 =#
-                        (Fn{Int64, Tuple{Tuple{Int64, Int64}}}(var"d_+"))((f_x::Int64, g_y::Int64)::Tuple{Int64, Int64})::Int64
-                    end)
-            end)
-    h_var::Int64 = (Fn{Int64, Tuple{Int64}}(e_fun(c_implicitInt(b_implicitStr::String)::Int64)))(1::Int64)::Int64
+                end)::Function
+    var"|main|e_fun"::Function = function (var"|main|f_x",)
+                #= /home/tainez/github/MLFS/test/testim.jl:30 =#
+                function (var"|main|g_y",)
+                        #= /home/tainez/github/MLFS/test/testim.jl:30 =#
+                        (var"|main|d_+"::Function)((var"|main|f_x"::Any, var"|main|g_y"::Any)::Tuple{Any, Any})::Any
+                    end::Function
+            end::Function
+    var"|main|h_var"::Any = (var"|main|e_fun"(var"|main|c_implicitInt"(var"|main|b_implicitStr"::String)::Any)::Function)(1::Any)::Any
     0
 end

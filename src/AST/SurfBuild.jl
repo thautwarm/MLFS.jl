@@ -10,6 +10,7 @@ function surf_type(ex)
         :(implicit[$t]) => Surf.TImplicit(surf_type(t))
         :(Fn[$a, $b]) => Surf.TArrow(surf_type(a), surf_type(b))
         :($a.?($label)) => Surf.TQuery(string(label), surf_type(a))
+        :($a.$(b::Symbol)) => Surf.TApp(Surf.TVar(:field), Surf.TSym(b))
         :($f[$a]) => Surf.TApp(surf_type(f), surf_type(a))
         Expr(:tuple, args...) =>
             Surf.TTuple(Surf.TyExpr[surf_type(a) for a in args])
@@ -31,6 +32,7 @@ end
 function surf_expr(exp::Expr)
     @match exp begin
     :(@julia $(::LineNumberNode) $jlex) => Surf.EExt(jlex)
+    :(@extern $(::LineNumberNode) $jlex) => Surf.EExt(jlex)
     :($a.?($label)) => Surf.EQuery(string(label), surf_expr(a))
     :($f($(args...))) =>
         length(args) === 1 ?
@@ -103,6 +105,13 @@ end
 macro surf_toplevel(ex)
     @match ex begin
         Expr(:block, stmts...) => surf_decls(stmts)
+        _ => error("syntax error")
+    end
+end
+
+function surf_module(ex)
+    @match ex begin
+        Expr(:module, true, name, stmts...) => (name, surf_decls(stmts))
         _ => error("syntax error")
     end
 end

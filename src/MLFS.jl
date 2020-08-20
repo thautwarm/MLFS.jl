@@ -1,7 +1,15 @@
 module MLFS
 using MLStyle
 using Setfield
-using DataStructures: list, cons, nil, LinkedList
+using DataStructures: list, cons, nil, LinkedList, Cons, Nil
+include("TypedIO.jl")
+import .TypedIO: fromVec, toVec, @typedIO
+
+
+"""
+forward declaration of IR.ExprImpl
+"""
+abstract type ExprImpl end
 
 struct CFunc{A, B}
     f :: Function
@@ -26,6 +34,7 @@ for i in 1:3
     end
 end
 
+
 include("HM.jl")
 using .HM
 export T
@@ -49,6 +58,7 @@ include("Infer.jl")
 
 include("TypeErasure.jl")
 include("Compiler/ToJulia.jl")
+include("Modular.jl")
 # Write your package code here.
 
 end

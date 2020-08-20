@@ -19,7 +19,7 @@ function tyErase(hm::HMT)
         Tup(xs) => ERTuple(ErasedType[tyErase(x) for x in xs])
         Nom(x) => ERNom(x)
         App(Nom(:Type), x) => ERType(tyErase(x))
-        App() => Any
+        App() => ERAny
         Implicit(t) => tyErase(t)
     end
 end
@@ -27,8 +27,7 @@ end
 function erasedToJuliaTy(e::ErasedType)
     ! = erasedToJuliaTy
     @match e begin
-        ERArrow(a, r) => 
-            :(Fn{$(!r), Tuple{$(!a)}})
+        ERArrow(a, r) => :Function
         ERNom(name) =>
             @match name begin
                 :int64 => :Int64

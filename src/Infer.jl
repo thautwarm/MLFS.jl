@@ -32,19 +32,18 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
         T(App(f, b))
 
     @case Surf.TTuple(args)
-        T(Tup(Tuple(inferType(
-            globalTC, localTC, arg) for arg in args)))
+        T(Tup(HMT[inferType(globalTC, localTC, arg) for arg in args]))
 
     @case Surf.TForall(tvars, p)
         any(tvars) do s; s isa Symbol end ||
             throw(MLError(ln, InvalidSyntax("$exp")))
         let typeEnv = localTC.typeEnv
 
-            uniqueNames = [UN(k) for k in tvars]
+            uniqueNames = UN[UN(k) for k in tvars]
             typeEnv = typeEnv[[un.name => T(Bound(un)) for un in uniqueNames]]
             localTC = @set localTC.typeEnv = typeEnv
             p = inferType(globalTC, localTC, p)
-            T(Forall(Tuple(uniqueNames), p))
+            T(Forall(uniqueNames, p))
         end
 
     @case Surf.TArrow(a, b)
@@ -71,7 +70,8 @@ end
 const _InferPostponed = CFunc{IR.Decl, Tuple{}}
 
 function inferModule(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
-    [f() for f in inferDecls(globalTC, localTC, decls, Val(true))[1]]
+    props, localTC = inferDecls(globalTC, localTC, decls, Val(true))
+    [f() for f in props], localTC
 end
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
@@ -79,7 +79,7 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
 end
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl}, ::Val{isGlobal}) where isGlobal
-    annotated :: Dict{Symbol, Tuple} = Dict{Symbol, Tuple}()
+    annotated :: Dict{Symbol, Vector{HM.UN}} = Dict{Symbol, Tuple}()
     loweredDeclFs = _InferPostponed[]
     @inline addDecl!(f::Function) = push!(loweredDeclFs, _InferPostponed(f))
 
@@ -109,18 +109,22 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
                 Implicit(t) =>
                     if isGlobal
                         t = globalTC.tcstate.prune(t)
-                        globalImplicits = get!(globalTC.globalImplicits, getTConsHead(t)) do
+                        tConsHead = getTConsHead(t)
+                        globalImplicits = get!(globalTC.globalImplicits, tConsHead) do
                             InstRec[]
                         end
                         push!(globalImplicits, InstRec(t, localTC.ln, gensym, false))
-                        annotated[sym] = ()
+                        globalTC.globalImplicitDeltas[tConsHead] =
+                            get(globalTC.globalImplicitDeltas, tConsHead, 0) + 1
+
+                        annotated[sym] = HM.UN[]
                     else
                         inst = InstRec(t, localTC.ln, gensym, false)
                         localImplicits = cons(inst, localTC.localImplicits)
                         localTC = @set localTC.localImplicits = localImplicits
-                        annotated[sym] = ()
+                        annotated[sym] = HM.UN[]
                     end
-                _ => begin annotated[sym] = () end
+                _ => begin annotated[sym] = HM.UN[] end
             end
             nothing
         @case Surf.DBind(sym, expr)
@@ -171,8 +175,8 @@ end
 intTypes = Dict{Int, Nom}()
 floatTypes = Dict{Int, Nom}()
 for bit in (8, 16, 32, 64)
-    intTypes[bit] = Nom(Symbol(:int, bit))
-    floatTypes[bit] = Nom(Symbol(:float, bit))
+    intTypes[bit] = Nom(Symbol(:i, bit))
+    floatTypes[bit] = Nom(Symbol(:f, bit))
 end
 strT = Nom(:str)
 charT = Nom(:char)
@@ -245,8 +249,8 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
 
             function propTup(ti::TypeInfo, localImplicits::InstResolCtx)
                 local ts, tupT, elts, implicits
-                ts = [new_tvar() for i = 1:n_xs]
-                tupT = Tup(Tuple(ts))
+                ts = HMT[new_tvar() for i = 1:n_xs]
+                tupT = Tup(ts)
                 tupT, implicits, makeTI = applyTI(ti, tupT)
                 elts = IR.Expr[(prop(makeTI(t), localImplicits)) for (prop, t) in zip(props, ts)]
                 IR.applyImplicits(IR.ETup(elts), implicits, tupT, ln, localImplicits)
@@ -323,12 +327,19 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         end
 
     @case Surf.EVal(val)
-        (eValI, eT) = @match val begin
-            ::Integer => (IR.EInt(val), intTypes[8 * sizeof(val)])
-            ::AbstractFloat => (IR.EFloat(val), floatTypes[8 * sizeof(val)])
-            ::String => (IR.EStr(val), strT)
-            ::Char => (IR.EChar(val), charT)
-            ::Bool => (IR.EBool(val), boolT)
+        (eValI, eT) = @switch val begin
+            @case ::Integer
+                bit = 8 * sizeof(val)
+                IR.EInt(val, bit), intTypes[bit]
+            @case ::AbstractFloat
+                bit = 8 * sizeof(val)
+                IR.EFloat(val, bit), floatTypes[bit]
+            @case ::String 
+                IR.EStr(val), strT
+            @case ::Char
+                IR.EChar(val), charT
+            @case ::Bool
+                IR.EBool(val), boolT
         end
         prop(eT, eValI)
 

@@ -5,13 +5,37 @@ export gTrans, gTransCtx, gCheck
 export tvar_of_int, int_of_tvar, IllFormedType
 export ⪯, less_than_under_evidences
 
+using MLFS: @typedIO
+import MLFS
 using MLStyle
 import Base
 
 const VerboseUN = Ref(false)
+
+
 mutable struct UN # unique name
     name :: Symbol
+    ts :: UInt64
 end
+const pool = Dict{Tuple{UInt64, UInt64}, UN}()
+
+function UN(n::Symbol)
+    un = UN(n, time_ns())
+    pool[(un.ts, objectid(un))] = un
+    un
+end
+
+MLFS.TypedIO.toVec(::Type{UN}, un::UN) = [toVec(Symbol, un.name), objectid(un), un.ts]
+MLFS.TypedIO.fromVec(::Type{UN}, v::Vector) =
+    let n = Symbol(v[1])
+        objectid = fromVec(UInt64, v[2]).value,
+        ts = fromVec(UInt64, v[3]).value,
+        key = (ts, objectid)
+
+        get!(pool, key) do
+            un = UN(n, ts)
+        end
+    end
 
 const noImplicits = Val(false)
 
@@ -28,8 +52,22 @@ Base.show(io::IO, unique_name::UN) =
     Bound(n::UN)
     App(f::HMT, arg::HMT)
     Arrow(from::HMT, to::HMT)
-    Tup{N}::(NTuple{N,HMT}) => HMT
-    Forall{N}::(NTuple{N, UN}, HMT) => HMT
+    Tup(Vector{HMT})
+    Forall(Vector{UN}, HMT)
+
+    Implicit(HMT)
+end
+
+@typedIO Nom(Symbol)
+
+@typedIO HMT = begin
+    Var(UInt)
+    Nom(Symbol)
+    Bound(UN)
+    App(HMT, HMT)
+    Arrow(HMT, HMT)
+    Tup(Vector{HMT})
+    Forall(Vector{UN}, HMT)
 
     Implicit(HMT)
 end
@@ -97,7 +135,7 @@ function gTrans(self::Function, root::HMT)
         Var(_) || Nom(_) || Bound(_) => root
         App(f, arg) => App(self(f), self(arg))
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
-        Tup(xs) => Tup(Tuple(self(x) for x in xs))
+        Tup(xs) => Tup(HMT[self(x) for x in xs])
         Forall(ns, p) => Forall(ns, self(p))
         Implicit(x) => Implicit(self(x))
     end
@@ -109,7 +147,7 @@ function gTransCtx(self′::Function, ctx::Ctx, root::HMT) where Ctx
         Var(_) || Nom(_) || Bound(_) => root
         App(f, arg) => App(self(f), self(arg))
         Arrow(arg, ret) => Arrow(self(arg), self(ret))
-        Tup(xs) => Tup(Tuple(self(x) for x in xs))
+        Tup(xs) => Tup(HMT[self(x) for x in xs])
         Forall(ns, p) => Forall(ns, self(p))
         Implicit(x) => Implicit(self(x))
     end
@@ -349,9 +387,11 @@ function mk_tcstate(tctx::Vector{HMT})
         lhs === rhs && return true
 
         @match lhs, rhs begin
-            (Forall{N1}(ns1, p1) where N1, Forall{N2}(ns2, p2) where N2) =>
-                N1 === N2 &&
+            (Forall(ns1, p1), Forall(ns2, p2)) =>
                 (begin
+                    N1, N2 = length(ns1), length(ns2)
+                    N1 !== N2 && return false
+
                     subst1 = Dict{UN, Var}(a => new_tvar() for a in ns1)
                     generic = p2
                     unify(fresh(subst1, p1), generic) || return false

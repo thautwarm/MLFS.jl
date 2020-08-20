@@ -5,12 +5,16 @@ version = "0.1.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+MD5 = "6ac74813-4b46-53a4-afec-0b5dc9d7885c"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [compat]
 DataStructures = "~0.17.1, 0.18.0"
+FileIO = "1.4"
 MLStyle = "0.4"
 PrettyPrint = "0.2"
 Setfield = "0.7"

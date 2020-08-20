@@ -17,10 +17,8 @@ function irToJulia(expr::IR.Expr, ln::LineNumberNode)
                 if t === nothing
                     e
                 else
-                    erased = tyErase(t)
-                    cons = erased isa ERArrow
-                    t = erasedToJuliaTy(erased)
-                    cons ?  :($t($e)) : :($e :: $t)
+                    t = erasedToJuliaTy(tyErase(t))
+                    :($e :: $t)
                 end
             end
     end
@@ -37,8 +35,6 @@ function irToJulia(expr::IR.ExprImpl, ln::LineNumberNode)
 
     @case IR.EVar(s)
         s
-    @case IR.EVal(l)
-        l
     @case IR.ELet(decls, expr)
         Expr(:block,
             ln,
@@ -62,7 +58,7 @@ function irToJulia(expr::IR.ExprImpl, ln::LineNumberNode)
         Expr(:call, irToJulia(f, ln), irToJulia(a, ln))
     @case IR.ETup(xs)
         Expr(:tuple, irToJulia.(xs, [ln])...)
-    @case IR.EInt(i) || IR.EFloat(i) ||
+    @case IR.EInt(i, _) || IR.EFloat(i, _) ||
           IR.EStr(i) || IR.EChar(i) ||
           IR.EBool(i)
         i

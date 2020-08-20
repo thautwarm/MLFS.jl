@@ -1,0 +1,1 @@
+["ModuleRecord","main",[],[["DLoc",["LineNumberNode",11,"/home/tainez/github/MLFS/test/a.jl"]],["DAnn","x",["TVar","i64"]],["DLoc",["LineNumberNode",12,"/home/tainez/github/MLFS/test/a.jl"]],["DBind","x",["EVal",["int",8,"1"]]]]]

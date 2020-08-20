@@ -3,9 +3,10 @@ using Test
 using PrettyPrint
 using Setfield
 using MLFS.HM
+using MLFS.TypedIO
 
 @testset "MLFS.jl" begin
-    it = Symbol(:int, sizeof(Int) * 8)
+    it = Symbol(:i, sizeof(Int) * 8)
     t = Surf.TArrow(Surf.TVar(:Int), Surf.TVar(:Int))
     g = empty(GlobalTC)
     l = empty(LocalTC)
@@ -178,7 +179,10 @@ using MLFS.HM
     
 end
 
+
 include("testim.jl")
 open("testim_gen.jl") do f
     println(read(f, String))
 end
+
+include("a.jl")

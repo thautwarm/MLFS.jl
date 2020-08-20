@@ -9,11 +9,35 @@ datatype for type class instances
 mutable struct InstRec
     t :: HMT             # instance type
     ln :: LineNumberNode # where the instance defined
-    gensym :: Gensym     # the actual gensym(IR level) to access this instance
+    gensym :: ExprImpl   # the actual gensym(IR level) to access this instance
     isPruned :: Bool     # is the instance type pruned?
 end
+@typedIO InstRec(HMT, LineNumberNode, ExprImpl, Bool)
 
 const InstResolCtx = LinkedList{InstRec}
+
+function toVec(t::Type{LinkedList{E}}, x::Cons{E}) where E
+    [toVec(E, x.head), toVec(t, x.tail)]
+end
+
+function toVec(::Type{LinkedList{E}}, ::Nil{E}) where E
+    nothing
+end
+
+function fromVec(::Type{LinkedList{E}}, x::Nothing) where E
+    Some(nil(E))
+end
+
+function fromVec(t::Type{LinkedList{E}}, x::Vector) where E
+    length(x) !== 2 && return nothing
+    head = fromVec(E, x[1])
+    head === nothing && return nothing
+    tail = fromVec(t, x[2])
+    tail === nothing && return nothing
+    Some(cons(head.value, tail.value))
+end
+
+InstRec(t::HMT, ln::LineNumberNode, gensym::Symbol, isPruned::Bool) = InstRec(t, ln, IR.EVar(gensym), isPruned)
 
 const arrowClass = Nom(:arrow_class)
 const generalClass = Nom(:general_class)
@@ -32,13 +56,23 @@ struct GlobalTC
     tcstate :: TCState
     count :: Ref{UInt}
     globalImplicits :: Dict{Nom, Vector{InstRec}}
+    globalImplicitDeltas :: Dict{Nom, UInt32}
     queries :: Vector{Pair{String, HMT}}
+    moduleName :: Symbol
 end
 
-Base.show(io::IO, ::GlobalTC) = Base.show(io, "<GlobalTC>")
+Base.show(io::IO, ::GlobalTC) = Base.show(io, "<GlobalTC>") 
 
-Base.empty(::Type{GlobalTC}) =
-    GlobalTC(mk_tcstate(HMT[]), Ref(UInt(0)), Dict{Nom, Vector{InstRec}}(), Pair{String, HMT}[])
+
+Base.empty(::Type{GlobalTC}, moduleName::Symbol = :main) =
+    GlobalTC(
+        mk_tcstate(HMT[]),
+        Ref(UInt(0)),
+        Dict{Nom, Vector{InstRec}}(),
+        Dict{Nom, UInt32}(),
+        Pair{String, HMT}[],
+        moduleName
+    )
 
 function show_hints(globalTC::GlobalTC)
     prune = globalTC.tcstate.prune
@@ -71,5 +105,5 @@ symgen(g::GlobalTC) =
             push!(chars, αβ[j + 1])
             i = div(i, 26)
         end
-        Symbol(chars)
+        Symbol(:|, g.moduleName, :|, Symbol(chars))
     end

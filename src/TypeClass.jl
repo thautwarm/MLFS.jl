@@ -1,4 +1,5 @@
 export instanceResolve
+
 function instanceResolve(
         globalTC::GlobalTC,
         localImplicits::InstResolCtx,
@@ -22,7 +23,7 @@ function instanceResolve(
         if length(candicates) === 1
             rec, evidences = candicates[1]
             explicits = IR.Expr[instanceResolve(globalTC, localImplicits, evi, ln) for evi in evidences]
-            return IR.applyExplicits(IR.EVar(rec.gensym), explicits, target, ln)
+            return IR.applyExplicits(rec.gensym, explicits, target, ln)
         else
             throw(MLError(
                 ln,
@@ -49,7 +50,7 @@ function instanceResolve(
         if length(candicates) === 1
             rec, evidences = candicates[1]
             explicits = IR.Expr[instanceResolve(globalTC, localImplicits, evi, ln) for evi in evidences]
-            return IR.applyExplicits(IR.EVar(rec.gensym), explicits, target, ln)
+            return IR.applyExplicits(rec.gensym, explicits, target, ln)
         else
             throw(MLError(
                 ln,
