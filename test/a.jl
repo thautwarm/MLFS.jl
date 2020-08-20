@@ -8,8 +8,16 @@ using MLStyle
 using JSON
 
 stmts = @surf_toplevel begin
-    x :: i64
+    op_Getter :: implicit[Fn[field[(i64, :a, i64)], i64]]
+    op_Getter = @julia (identity)
+
+    f :: implicit[field[(i64, :a, i64)]]
+    f = @julia (x -> x)
+    x :: implicit[i64]
     x = 1
+
+    g :: (i64 -> i64 -> _)
+    g = x -> y -> (y.a).?(aa)
 end
 
 mr = Surf.ModuleRecord(:main, [], stmts)

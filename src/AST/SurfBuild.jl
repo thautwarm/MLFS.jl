@@ -34,6 +34,7 @@ function surf_expr(exp::Expr)
     :(@julia $(::LineNumberNode) $jlex) => Surf.EExt(jlex)
     :(@extern $(::LineNumberNode) $jlex) => Surf.EExt(jlex)
     :($a.?($label)) => Surf.EQuery(string(label), surf_expr(a))
+    :($a.$(b::Symbol)) => Surf.EApp(Surf.EVar(:op_Getter), Surf.EField(surf_expr(a), b))
     :($f($(args...))) =>
         length(args) === 1 ?
         Surf.EApp(surf_expr(f), surf_expr(args[1])) :

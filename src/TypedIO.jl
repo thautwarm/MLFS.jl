@@ -6,8 +6,17 @@ using MLStyle
 function toVec end
 function fromVec end
 
+toVec(::Type{Any}, x::Expr) = ["Expr", string(x)]
 toVec(::Type{Any}, x) = string(x)
-fromVec(::Type{Any}, x) = Some(x)
+
+fromVec(::Type{Any}, x::String) = Some(x)
+fromVec(::Type{Any}, x::Vector) =
+    if (length(x) === 2 && x[1] == "Expr")
+        Some(Meta.parse(x[2]))
+    else
+        nothing
+    end
+
 
 toVec(::Type{Integer}, a::A) where A <: Signed = ["int", sizeof(a), string(a)]
 toVec(::Type{Integer}, a::A) where A <: Unsigned = ["uint", sizeof(a), string(a)]

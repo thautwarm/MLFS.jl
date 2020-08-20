@@ -48,7 +48,7 @@ getTConsHead(h::HMT) =
         App(t, _) ||
         Forall(_, t) => getTConsHead(t)
         Arrow(Implicit(_), t) => getTConsHead(t)
-        Arrow(_, _) => ArrowClass
+        Arrow(_, _) => arrowClass
         _ => generalClass
     end
 
@@ -56,7 +56,7 @@ struct GlobalTC
     tcstate :: TCState
     count :: Ref{UInt}
     globalImplicits :: Dict{Nom, Vector{InstRec}}
-    globalImplicitDeltas :: Dict{Nom, UInt32}
+    globalImplicitDeltas :: Dict{Nom, Int32}
     queries :: Vector{Pair{String, HMT}}
     moduleName :: Symbol
 end

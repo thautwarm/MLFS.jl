@@ -241,6 +241,19 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
     @case Surf.ELoc(ln, expr)
         inferExpr(globalTC, (@set localTC.ln = ln), expr)
 
+    @case Surf.EField(subject, field)
+
+        exprTyProp = inferExpr(globalTC, localTC, subject)
+        function propField(ti::TypeInfo, localImplicits::InstResolCtx)
+            local eSub, retTV, retT, eRet, lhs
+            eSub = exprTyProp(NoProp, localImplicits)
+            retTV = new_tvar()
+            target = App(Nom(:field), Tup(HMT[eSub.ty, Nom(field), retTV]))
+            retT, eAccess = instanceResolveAndType(globalTC, localImplicits, target, ln)
+            retT, implicits, makeTI = applyTI(ti, retTV)
+            IR.applyImplicits(IR.EApp(eAccess, eSub), implicits, retT, ln, localImplicits)
+        end
+
     @case Surf.ETup(xs)
 
         let elty = CFunc{IR.Expr, Tuple{TypeInfo, InstResolCtx}},

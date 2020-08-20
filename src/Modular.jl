@@ -80,6 +80,7 @@ function smlfsCompile(
     loadSigs(sigFiles, loadedModules, g)
 
     decls, signature = loadSrcs(srcFiles, loadedModules, g)
+    show_hints(g)
 
     declsJSON = toVec(Vector{IR.Decl}, decls)
     open(joinpath(outDir, "$outName.mlfso"), "w") do f
@@ -137,7 +138,17 @@ function loadSrcs(srcFiles::Vector{Pair{Symbol, Path}}, loadedModules::Set{Symbo
                 loadModule(moduleName, mR.imports, mR.decls, each, g))
         end
     end
-    signature = Pair{Nom, Vector{InstRec}}[nom => g.globalImplicits[nom][end-n+1:end] for (nom, n) in globalImplicitDeltas]
+    
+    prune = g.tcstate.prune
+    pruneRel(x::InstRec) = begin
+        x.isPruned || (x.t = prune(x.t))
+        x
+    end
+    signature = Pair{Nom, Vector{InstRec}}[
+        nom =>
+            pruneRel.(g.globalImplicits[nom][end-n+1:end])
+        for (nom, n) in globalImplicitDeltas
+    ]
     decls, (moduleNames=>signature)
 end
 
@@ -148,10 +159,9 @@ function loadModule(
     path::Path,
     g::GlobalTC)
 
-    tcstate = mk_tcstate(HMT[])
+    tcstate = g.tcstate
     prune = tcstate.prune
 
-    g = @set g.tcstate = tcstate
     g = @set g.moduleName = moduleName
     l = empty(LocalTC)
     l = @set l.typeEnv = preDefinedTypeEnv
