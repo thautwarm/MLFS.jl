@@ -68,7 +68,7 @@ let choose_id = choose id
 
 Above annotation for `choose_id` is correct, however cannot get correctly checked in MLFS.
 
-This is because the following equation is difficult to solve:
+This is because the following inequation is difficult to solve:
 
 ```ocaml
 monotype_var ->(forall a.a) -> (monotype0 -> monotype0) 
