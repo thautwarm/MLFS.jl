@@ -59,6 +59,7 @@ include("Infer.jl")
 include("TypeErasure.jl")
 include("Compiler/ToJulia.jl")
 include("Modular.jl")
+include("IR2Jl.jl")
 # Write your package code here.
 
 end

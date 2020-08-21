@@ -25,17 +25,19 @@ function UN(n::Symbol)
     un
 end
 
-MLFS.TypedIO.toVec(::Type{UN}, un::UN) = [toVec(Symbol, un.name), objectid(un), un.ts]
-MLFS.TypedIO.fromVec(::Type{UN}, v::Vector) =
-    let n = Symbol(v[1])
-        objectid = fromVec(UInt64, v[2]).value,
-        ts = fromVec(UInt64, v[3]).value,
-        key = (ts, objectid)
+MLFS.TypedIO.toVec(::Type{UN}, un::UN) = [
+    MLFS.TypedIO.toVec(Symbol, un.name), string(objectid(un)), string(un.ts)]
+function MLFS.TypedIO.fromVec(::Type{UN}, v::Vector)
+    n = Symbol(v[1])
+    objectid = parse(UInt64, v[2])
+    ts = parse(UInt64, v[3])
+    key = (ts, objectid)
 
-        get!(pool, key) do
-            un = UN(n, ts)
-        end
-    end
+    Some(get!(pool, key) do
+        un = UN(n, ts)
+    end)
+
+end
 
 const noImplicits = Val(false)
 

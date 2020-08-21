@@ -23,6 +23,19 @@ function fromVec(::Type{Any}, x::Vector)
 end
 
 
+toVec(::Type{UInt64}, a::UInt64) where A <: Signed = ["uint", sizeof(a), string(a)]
+function fromVec(::Type{UInt64}, a::Integer)
+    Some(UInt64(a))
+end
+
+function fromVec(::Type{UInt64}, a::Vector)
+    tag = a[1]
+    bit = a[2]
+    tag  == "uint" && bit == 8 || return nothing
+    return Some(parse(UInt64, s))
+end
+
+
 toVec(::Type{Integer}, a::A) where A <: Signed = ["int", sizeof(a), string(a)]
 toVec(::Type{Integer}, a::A) where A <: Unsigned = ["uint", sizeof(a), string(a)]
 toVec(::Type{AbstractFloat}, a::A) where A <: AbstractFloat = ["float", sizeof(a), string(a)]
@@ -85,8 +98,8 @@ end
 toVec(::Type{Nothing}, ::Nothing) = nothing
 fromVec(::Type{Nothing}, ::Nothing) = Some(nothing)
 
-toVec(::Type{I}, x::I) where I <: Union{Int8, Int16, Int32, UInt8, UInt16, UInt32, Int64, UInt64} = I(x)
-fromVec(::Type{I}, x::Integer) where I <: Union{Int8, Int16, Int32, UInt8, UInt16, UInt32,  Int64, UInt64} = Some(I(x))
+toVec(::Type{I}, x::I) where I <: Union{Int8, Int16, Int32, UInt8, UInt16, UInt32, Int64} = I(x)
+fromVec(::Type{I}, x::Integer) where I <: Union{Int8, Int16, Int32, UInt8, UInt16, UInt32,  Int64} = Some(I(x))
 
 toVec(::Type{Float64}, x::Float64) = x
 fromVec(::Type{Float64}, x::Float64) = Some(x)

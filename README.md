@@ -20,6 +20,7 @@ This repo is an implementation of MLFS type system with
 - Type classes(implicit arguments)
 - Scoped type variables
 
+
 ## About
 
 So far the following programs can be correctly inferred/checked.

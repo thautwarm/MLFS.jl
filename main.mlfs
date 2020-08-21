@@ -4,3 +4,11 @@ let main = 1
 
 let x = 1
 check main as main
+
+val unit : Type @unit
+let unit = unit
+
+val println : forall a. a -> unit
+let println = extern "println"
+
+let _ = println 1

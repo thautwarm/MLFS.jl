@@ -83,13 +83,13 @@ import : 'import' nameStr 'as' nameStr
 
 tvar    : <name> { [TVar, $1.value] };
 
-toptype : 'forall' list[tvar] '.' type { [TForall, $2, $4] }
+toptype : 'forall' list[nameStr] '.' toptype { [TForall, $2, $4] }
         |  arrowtype  { $1 }
         ;  
   
 
-arrowtype : type '->' toptype { [TArrow, $1, $3] }
-          | type { $1 }
+arrowtype : calltype '->' toptype { [TArrow, $1, $3] }
+          | calltype { $1 }
           ;
         
 calltype : calltype type { [TApp, $1, $2] }

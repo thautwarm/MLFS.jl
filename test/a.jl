@@ -28,14 +28,5 @@ end
 smlfsCompile(["a.mlfs"], String[], "a")
 
 
-open("a.mlfso") do f
-    open("a_gen.jl", "w") do ff
-        d = JSON.Parser.parse(read(f, String))
-        solvedIRs = fromVec(Vector{IR.Decl}, d).value
-
-        ir = IR.ELet(solvedIRs,IR.Expr(LineNumberNode(1),nothing, IR.EInt(0, 8)))
-        jl_exp = irToJulia(ir, LineNumberNode(1))
-        println(ff, Expr(:let, Expr(:block), jl_exp))
-    end
-end
+ir2jl("./", "a_gen_asm.jl")
 

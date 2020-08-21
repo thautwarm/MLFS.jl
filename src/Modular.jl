@@ -52,7 +52,8 @@ const preDefinedTypeEnv = Store{Symbol, HMT}()[[
         :char, :str, :bool,
         :module,
         :field,
-        :fieldnames
+        :fieldnames,
+        :Type
     ]
 ]]
 
