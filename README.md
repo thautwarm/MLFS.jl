@@ -26,6 +26,13 @@ This repo is an implementation of MLFS type system with
 
     https://github.com/abelsiqueira/jill
 
+2. develop this package
+    
+    ```
+    julia> ]
+    pkg> dev .
+    ```
+
 
 2. install python CLI(require Python >= 3.7)
 
