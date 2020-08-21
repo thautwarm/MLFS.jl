@@ -1,0 +1,11 @@
+module Println
+
+
+val unit : Type @unit
+let unit = unit
+
+
+val println : forall a. a -> unit
+let println = extern "println"
+
+let _ = println "hello!"

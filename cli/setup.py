@@ -1,6 +1,6 @@
 from setuptools import setup
 from pathlib import Path
-with Path("README.md").open() as readme:
+with Path("../README.md").open() as readme:
     readme = readme.read()
 
 version = 0.1

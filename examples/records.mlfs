@@ -1,0 +1,24 @@
+module Record
+
+val op_Getter : forall a b c. field (a, b, c) -> c
+let op_Getter = extern "x -> x.get"
+val tupleFirst : { forall a b. field ((a, b), "first", a) }
+let tupleFirst = extern "((fst, snd), ) -> (get = fst, set = fst -> (fst, snd))"
+
+
+val unit : Type @unit
+let unit = unit
+
+
+val println : forall a. a -> unit
+let println = extern "println"
+
+
+
+let _ = println (1, "3").first
+let _ = println ((1, "3"), 2).first
+let _ = println (1, "3").first
+let _ = println ((1.0, 2.0), 4.0).first
+
+
+

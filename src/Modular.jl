@@ -8,38 +8,51 @@ import FileIO
 
 export smlfsCompile
 
+macro _check_prune(a)
+    quote
+        let ret = pruneWithVarCheck(collect_unsolved, $a)
+            !isempty(unsolved_vars) &&
+                throw(MLError(ln, UnsolvedTypeVariables(unsolved_vars)))
+            ret
+        end
+    end |> esc
+end
 function mkPostInfer(g::GlobalTC)
-    prune = g.tcstate.prune
+    pruneWithVarCheck = g.tcstate.pruneWithVarCheck
+    unsolved_vars = Set{Var}()
+    function collect_unsolved(v::Var)
+        push!(unsolved_vars, v)
+    end
 
-    function postInfer(root::IR.Decl)
+    function postInfer(ln::LineNumberNode, root::IR.Decl)
         @match root begin
-            IR.Perform() => IR.gTrans(postInfer, root)
+            IR.Perform(_) => IR.gTransCtx(postInfer, ln, root)
             IR.Assign(a, t, e) => 
-                IR.Assign(a, prune(t), postInfer(e))
+                IR.Assign(a, @_check_prune(t), postInfer(ln, e))
         end
     end
 
-    function postInfer(root::IR.Expr)
+    function postInfer(ln::LineNumberNode, root::IR.Expr)
         @match root begin
             IR.Expr(ln, ty, expr) =>
-                let expr = postInferE(expr, ln),
-                    ty = ty === nothing ? nothing : prune(ty)
+                let expr = postInfer(ln, expr),
+                    ty = ty === nothing ? nothing : @_check_prune(ty)
                     
                     IR.Expr(ln, ty, expr)
                 end 
         end
     end
 
-    function postInferE(root::IR.ExprImpl, ln::LineNumberNode)
+    function postInfer(ln::LineNumberNode, root::IR.ExprImpl)
         @match root begin
             IR.EIm(expr, t, insts) => 
-                let expr = postInfer(expr),
-                    t = prune(t)
+                let expr = postInfer(ln, expr),
+                    t = @_check_prune(t)
 
                     IR.EApp(expr, instanceResolve(g, insts, t, ln))
                 end
-            IR.ETypeVal(t) => IR.ETypeVal(prune(t))
-            _ => IR.gTrans(postInfer, root)
+            IR.ETypeVal(t) => IR.ETypeVal(@_check_prune(t))
+            _ => IR.gTransCtx(postInfer, ln, root)
         end
     end
     postInfer
@@ -49,6 +62,7 @@ const preDefinedTypeEnv = Store{Symbol, HMT}()[[
     a => T(Nom(a)) for a in Symbol[
         :i8, :i16, :i32, :i64,
         :i16, :i32, :i64,
+        :f16, :f32, :f64,
         :char, :str, :bool,
         :module,
         :field,
@@ -256,7 +270,7 @@ function loadModule(
     # type class, etc
     postInfer = mkPostInfer(g)
     for i in eachindex(results)
-        results[i] = postInfer(results[i])
+        results[i] = postInfer(ln, results[i])
     end
 
     results

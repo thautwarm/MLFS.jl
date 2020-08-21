@@ -37,7 +37,7 @@ This repo is an implementation of MLFS type system with
 3. install python CLI(require Python >= 3.7)
 
     ```
-    python setup.py install
+    cd cli && python setup.py install
     ```
 
 Usage

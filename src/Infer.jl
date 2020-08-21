@@ -196,17 +196,13 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         local implicits
         implicits = HMT[]
         @match ti begin
-            NoProp => (me, implicits, NoPropKind)
+            NoProp => (me, implicits)
             InstTo(instTy) => begin
                 unifyImplicits!(instTy, me, implicits) || begin
-                     throw(MLError(ln, UnificationFail))
+                    # @info :UNIFY_FAIL prune(instTy) prune(me)
+                    throw(MLError(ln, UnificationFail))
                 end
-                (instTy, implicits, InstToKind)
-            end
-            InstFrom(genTy) => begin
-                # @info :InstFrom prune(me) prune(genTy)
-                unifyINST(me, genTy) || throw(MLError(ln, UnificationFail))
-                (me, implicits, InstFromKind)
+                (instTy, implicits)
             end
         end
     end
@@ -215,7 +211,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         function propInner(ti::TypeInfo, localImplicits::InstResolCtx)
             local implicits
             varTy = prune(varTy)
-            varTy, implicits, _ = applyTI(ti, varTy)
+            varTy, implicits = applyTI(ti, varTy)
             IR.applyImplicits(eImpl, implicits, varTy, ln, localImplicits)
         end
     end
@@ -226,7 +222,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         function (ti::TypeInfo, localImplicits::InstResolCtx)
             local t, implicits
             t = new_tvar()
-            t, implicits, _ = applyTI(ti, t)
+            t, implicits = applyTI(ti, t)
             IR.applyImplicits(IR.EExt(jlex), implicits, t, ln, localImplicits)
         end
 
@@ -250,7 +246,8 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             retTV = new_tvar()
             target = App(Nom(:field), Tup(HMT[eSub.ty, Nom(field), retTV]))
             retT, eAccess = instanceResolveAndType(globalTC, localImplicits, target, ln)
-            retT, implicits, makeTI = applyTI(ti, retTV)
+            unifyImplicits!(target, retT, HMT[]) || throw(MLError(ln, UnificationFail))
+            retT, implicits = applyTI(ti, target)
             IR.applyImplicits(IR.EApp(eAccess, eSub), implicits, retT, ln, localImplicits)
         end
 
@@ -264,8 +261,8 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
                 local ts, tupT, elts, implicits
                 ts = HMT[new_tvar() for i = 1:n_xs]
                 tupT = Tup(ts)
-                tupT, implicits, makeTI = applyTI(ti, tupT)
-                elts = IR.Expr[(prop(makeTI(t), localImplicits)) for (prop, t) in zip(props, ts)]
+                tupT, implicits = applyTI(ti, tupT)
+                elts = IR.Expr[(prop(InstTo(t), localImplicits)) for (prop, t) in zip(props, ts)]
                 IR.applyImplicits(IR.ETup(elts), implicits, tupT, ln, localImplicits)
             end
         end
@@ -274,10 +271,10 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             argProp = inferExpr(globalTC, localTC, arg)
 
             function propApp(ti::TypeInfo, localImplicits::InstResolCtx)
-                local argT, retT, mkTI, eF, eArg, implicits
+                local argT, retT, eF, eArg, implicits
                 argT = new_tvar()
                 retT = new_tvar()
-                retT, implicits, mkTI = applyTI(ti, retT)
+                retT, implicits = applyTI(ti, retT)
                 eF = fProp(InstTo(Arrow(argT, retT)), localImplicits)
                 eArg = argProp(InstTo(argT), localImplicits)
                 IR.applyImplicits(IR.EApp(eF, eArg), implicits, retT, ln, localImplicits)
@@ -295,7 +292,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
 
             function propFun(ti::TypeInfo, localImplicits::InstResolCtx)
                 local arrowT, eBody, implicits
-                arrowT, implicits, _ = applyTI(ti, Arrow(argT, retT))
+                arrowT, implicits = applyTI(ti, Arrow(argT, retT))
                 localImplicits = @match prune(argT) begin
                     Implicit(instance) =>
                         cons(InstRec(instance, ln, gensym, false), localImplicits)
@@ -328,9 +325,9 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             new_tvar = globalTC.tcstate.new_tvar
 
             function propITE(ti::TypeInfo, localImplicits::InstResolCtx)
-                local t, eArm1, eArm2, eCond, eI, mkTI, implicits
-                t, implicits, mkTI = applyTI(ti, new_tvar())
-                ti = mkTI(t)
+                local t, eArm1, eArm2, eCond, eI, implicits
+                t, implicits = applyTI(ti, new_tvar())
+                ti = InstTo(t)
                 eArm1 = arm1Prop(ti, localImplicits)
                 eArm2 = arm2Prop(ti, localImplicits)
                 eCond = condProp(InstTo(boolT), localImplicits)
@@ -363,7 +360,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             T(_) && t =>
                 function propTVar(ti::TypeInfo, _::InstResolCtx)
                     @match ti begin
-                        InstFrom(t′) || InstTo(t′) =>
+                        InstTo(t′) =>
                             begin
                                 unify(t′, t) || throw(MLError(ln, UnificationFail))
                             end

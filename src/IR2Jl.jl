@@ -2,6 +2,7 @@ export ir2jl
 function ir2jl(directory::String, o::String)
     decls = IR.Decl[]
     for each in readdir(directory)
+        each = joinpath(directory, each)
         isfile(each) || continue
         endswith(each, ".mlfso") || continue
 

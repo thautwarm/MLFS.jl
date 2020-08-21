@@ -17,6 +17,7 @@ export TypeVarEscape
     DuplicateDeclaration(Symbol)
     DuplicateInstanceError(Vector{InstRec})
     InstanceNotFound(HMT)
+    UnsolvedTypeVariables(Set{Var})
 
     RecursiveType
     UnificationFail

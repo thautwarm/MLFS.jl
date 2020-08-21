@@ -105,4 +105,36 @@ function gTrans(self::Function, root::ExprImpl)
     end
 end
 
+
+function gTransCtx(self::Function, ctx::Ctx, root::Decl) where Ctx
+    !(root) = self(ctx, root)
+    @match root begin
+        Perform(impl) => Perform(!impl)
+        Assign(sym, t, impl) => Assign(sym, t, !impl)
+    end
+
+end
+
+function gTransCtx(self::Function, ctx::Ctx, root::Expr) where Ctx
+    self(ctx, root.expr)
+end
+
+function gTransCtx(self::Function, ctx::Ctx, root::ExprImpl) where Ctx
+    !(root) = self(ctx, root)
+    @match root begin
+        ETypeVal() || EExt() || EVar() || EChar() ||
+        EStr() || EBool() || EFloat() || EInt() =>
+           root
+
+        ELet(decls, expr) =>
+            ELet(IR.Decl[!decl for decl in decls], !expr)
+        EITE(a1, a2, a3) =>
+            EITE(!a1, !a2, !a3)
+        EFun(s, e) => EFun(s, !e)
+        EApp(f, a) => EApp(!f, !a)
+        ETup(xs) => ETup(IR.Expr[!x for x in xs])
+        EIm(expr, t, insts) => EIm(!expr, t, insts)
+    end
+end
+
 end # module

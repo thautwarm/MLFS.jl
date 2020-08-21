@@ -149,7 +149,10 @@ toVec(::Type{UnionSig{A, B}}, x::A) where {A, B<:Altnertive} = toVec(A, x)
 toVec(::Type{UnionSig{A, B}}, x) where {A, B <: Altnertive} = toVec(B, x)
 toVec(::Type{UnionSig{A, UnionEnd}}, x::A) where A = toVec(A, x)
 
-fromVec(_, _) = nothing
+fromVec(t, a) = begin
+    nothing
+
+end
 
 function fromVec(::Type{UnionSig{A, B}}, x) where {A, B<:Altnertive}
     l = fromVec(A, x)

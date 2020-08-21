@@ -63,7 +63,6 @@ end
 @typedIO Nom(Symbol)
 
 @typedIO HMT = begin
-    Var(UInt)
     Nom(Symbol)
     Bound(UN)
     App(HMT, HMT)
@@ -302,6 +301,25 @@ function mk_tcstate(tctx::Vector{HMT})
             a => gTrans(prune, a)
         end
     end
+
+    function pruneWithVarCheck(f::Function, a::HMT)
+        function prune(a::HMT)
+            v = @match a begin
+                Var(i) =>
+                    @match tctx[i] begin
+                        Var(i′) && if i′ === i end => a
+
+                        t => link!(i, prune(t))
+                    end
+                a => gTrans(prune, a)
+            end
+            if v isa Var
+                f(v)
+            end
+            v
+        end
+        prune(a)
+    end
     
     function instantiate(x::HMT)
         @match x begin
@@ -456,7 +474,8 @@ function mk_tcstate(tctx::Vector{HMT})
      unlink = unlink,
      occur_in = occur_in,
      instantiate = instantiate,
-     prune = prune)
+     prune = prune,
+     pruneWithVarCheck = pruneWithVarCheck)
 
 end
 

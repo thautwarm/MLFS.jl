@@ -1,0 +1,25 @@
+module Functor
+
+val Functor : Type @Functor
+let Functor = Functor
+
+val List : Type @List
+let List = List
+
+val Maybe : Type @Maybe
+let Maybe = Maybe
+
+val fmap : forall f. {Functor f} -> forall a b. (a -> b) -> f a -> f b
+let fmap = extern ""
+
+val listFunctor : {Functor List}
+let listFunctor = extern ""
+
+val lst : List i64
+let lst = extern ""
+
+let mapped = fmap (fun x -> "1") lst
+check mapped as mapped
+
+val f : (forall a. a -> a) -> (i64, str)
+let f = fun f -> (f 1, f "2")
