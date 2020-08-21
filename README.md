@@ -22,8 +22,13 @@ This repo is an implementation of MLFS type system with
 
 ## Installation && Usage
 
-1. install Julia: there is a one-liner option for all OS: https://github.com/abelsiqueira/jill
+1. install Julia: there is an one-liner option for all operating system:
+
+    https://github.com/abelsiqueira/jill
+
+
 2. install python CLI(require Python >= 3.7)
+
     ```
     python setup.py install
     ```
