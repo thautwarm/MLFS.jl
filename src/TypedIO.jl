@@ -32,7 +32,7 @@ function fromVec(::Type{UInt64}, a::Vector)
     tag = a[1]
     bit = a[2]
     tag  == "uint" && bit == 8 || return nothing
-    return Some(parse(UInt64, s))
+    return Some(parse(UInt64, a[3]))
 end
 
 

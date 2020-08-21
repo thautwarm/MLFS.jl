@@ -11,11 +11,27 @@ let unit = unit
 val println : forall a. a -> unit
 let println = extern "println"
 
-val eq : forall a. (a, a) -> bool
-let println = extern "=="
+val eq : forall a. a -> a -> bool
+let eq = extern "x -> y -> x == y"
 
 let _ = println (
-  if eq (1, 2)
+  if eq 1 2
   then 1
   else 2
 )
+
+val id : forall a. a -> a
+let id = fun x -> x
+
+val choose : forall a. a -> a -> a
+let choose = fun x -> fun y -> x
+
+let choose_id = choose id
+let x = choose_id id
+check x as x
+
+check println as println
+
+let _ = println(x "excuse me???")
+
+

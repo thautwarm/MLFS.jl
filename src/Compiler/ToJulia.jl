@@ -41,7 +41,7 @@ function irToJulia(expr::IR.ExprImpl, ln::LineNumberNode)
             map(x -> irToJulia(x, ln), decls)...,
             irToJulia(expr, ln)
         )
-    @case IR.EITE(a, b, e)
+    @case IR.EITE(a, b, c)
         Expr(:if,
             irToJulia(a, ln),
             irToJulia(b, ln),
