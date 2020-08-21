@@ -20,6 +20,30 @@ This repo is an implementation of MLFS type system with
 - Type classes(implicit arguments)
 - Scoped type variables
 
+## Installation && Usage
+
+1. install Julia: there is a one-liner option for all OS: https://github.com/abelsiqueira/jill
+2. install python CLI(require Python >= 3.7)
+    ```
+    python setup.py install
+    ```
+
+Usage
+
+1. Compile sources with signature files and produce new object files and signature files
+
+    ```ocaml
+    mlfsc a.mlfs b.mlfs --sig "sig1.mlfsa,sig2.mlfsa" -name <pkgname>
+    ```
+
+    This produces `<pkgname>.mlfsa` and `<pkgname>.mlfso`.
+
+2. Compile all `.mlfso` files into single julia file:
+
+    ```
+    mlfsc <directory of all .mlfso> -o <out>.jl
+    julia <out.jl>
+    ```
 
 ## About
 
