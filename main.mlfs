@@ -32,6 +32,27 @@ check x as x
 
 check println as println
 
-let _ = println(x "excuse me???")
+val Nat : Type @Vec
+let Nat = Nat
+
+val S : Nat -> Nat
+let S = extern "(x::UInt) -> 1 + x"
+
+val Z : Nat
+let Z = extern "UInt(0)"
+
+val matchNat : forall a. (Nat -> a) -> (Nat -> a) -> Nat -> a
+let matchNat = extern "f1 -> f2 -> x -> x == 0 ? f2(x) : f1(x)"
+
+
+
+let _ = println(x "hellow world!")
+
+let _ = println(
+  matchNat
+  (fun x -> "isS")
+  (fun x -> "isZ")
+  (S Z)
+)
 
 

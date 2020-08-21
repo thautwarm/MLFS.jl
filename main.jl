@@ -31,8 +31,41 @@ let
             end::Function
     var"|main|m_choose_id"::Function = (var"|main|j_choose"::Function)(var"|main|h_id"::Function)::Function
     var"|main|n_x"::Function = (var"|main|m_choose_id"::Function)(var"|main|h_id"::Function)::Function
-    (var"|main|f_println"::Function)((var"|main|n_x"::Function)("excuse me???"::String)::String)::Any
+    var"|main|o_Nat"::Type = Type::Type
+    var"|main|q_S"::Function = (x::UInt->begin
+                    #= none:1 =#
+                    #= none:3 =#
+                    1 + x
+                end)::Function
+    var"|main|r_Z"::Any = UInt(0)::Any
+    var"|main|s_matchNat"::Function = (f1->begin
+                    #= none:1 =#
+                    #= none:3 =#
+                    f2->begin
+                            #= none:3 =#
+                            #= none:5 =#
+                            x->begin
+                                    #= none:5 =#
+                                    #= none:7 =#
+                                    if x == 0
+                                        #= none:8 =#
+                                        f2(x)
+                                    else
+                                        #= none:10 =#
+                                        f1(x)
+                                    end
+                                end
+                        end
+                end)::Function
+    (var"|main|f_println"::Function)((var"|main|n_x"::Function)("hellow world!"::String)::String)::Any
+    (var"|main|f_println"::Function)((((var"|main|s_matchNat"::Function)(function (var"|main|t_x",)
+                                    #= main.mlfs:50 =#
+                                    "isS"::String
+                                end::Function)::Function)(function (var"|main|u_x",)
+                                #= main.mlfs:50 =#
+                                "isZ"::String
+                            end::Function)::Function)((var"|main|q_S"::Function)(var"|main|r_Z"::Any)::Any)::String)::Any
     var"|main|"::Tuple = ()
-    main::Tuple = (("eq", "i64", "main", "i32", "str", "i16", "choose", "bool", "x", "unit", "field", "module", "char", "println", "fieldnames", "choose_id", "i8", "id", "Type"), (var"|main|g_eq", Type, var"|main|b_main", Type, Type, Type, var"|main|j_choose", Type, var"|main|n_x", Type, Type, Type, Type, var"|main|f_println", Type, var"|main|m_choose_id", Type, var"|main|h_id", Type))
+    main::Tuple = (("eq", "i64", "main", "i32", "str", "S", "i16", "choose", "bool", "matchNat", "x", "Z", "unit", "field", "module", "char", "println", "Nat", "fieldnames", "choose_id", "i8", "id", "Type"), (var"|main|g_eq", Type, var"|main|b_main", Type, Type, var"|main|q_S", Type, var"|main|j_choose", Type, var"|main|s_matchNat", var"|main|n_x", var"|main|r_Z", Type, Type, Type, Type, var"|main|f_println", Type, Type, var"|main|m_choose_id", Type, var"|main|h_id", Type))
     0
 end

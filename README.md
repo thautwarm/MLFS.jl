@@ -46,7 +46,7 @@ Usage
 2. Compile all `.mlfso` files into single julia file:
 
     ```
-    mlfsc <directory of all .mlfso> -o <out>.jl
+    mlfsc <directory of all .mlfso> --o <out>.jl
     julia <out.jl>
     ```
 
