@@ -1,0 +1,140 @@
+
+# SMLFS programming language v0.1
+
+%%inline
+from json.decoder import py_scanstring
+def parse_str(s):
+    return py_scanstring(s, 1)[0]
+
+def str_concat(a, b):
+    return a + b
+
+def mk_tuple(T, xs):
+    if len(xs) == 1:
+        return xs[0]
+    return [T, xs]
+
+TForall = "TForall"
+TApp = "TApp"
+TArrow = "TArrow"
+TTuple = "TTuple"
+TImplicit = "TImplicit"
+TVar = "TVar"
+TSym = "TVar"
+TNew = "TNew"
+TQuery = "TQuery"
+
+DAnn = "DAnn"
+DLoc = "DLoc"
+DBind = "DBind"
+DQuery = "DQuery"
+
+ELoc = "ELoc"
+EVar(Symbol)
+EVal = "EVal"
+ELet = "ELet"
+EITE = "EITE"
+EFun = "EFun"
+EApp = "EApp"
+ETup = "ETup"
+EExt = "EExt"
+EQuery = "EQuery"
+Expr = "Expr"
+op_Getter = 'op_Getter'
+ModuleRecord = "ModuleRecord"
+
+def concat(xs):
+  if len(xs) == 1:
+    return xs[0]
+  res = []
+  for x in xs:
+    res.extend(x)
+  return res
+
+def importName(x):
+  return x.split('.')[-1]
+%%
+
+list[p] : p         { [$1] }
+        | list[p] p { $1.append($2); $1 }
+        ;
+
+sep_list[comma, p]
+        : p                          { [$1] }
+        | sep_list[comma, p] comma p { $1.append($3); $1 }
+        ;
+
+START : <BOF> toplevel { $2 };
+
+toplevel : 'module' nameStr
+           list[importName]
+           list[declaration]
+           { [ModuleRecord, $2, $3, $4] } ;
+
+import : 'import' nameStr 'as' nameStr
+          { [$2, $4] }
+       | 'import' nameStr
+          { [$2, importName($4)] }
+        ;
+
+tvar    : <name> { [TVar, $1.value] };
+
+toptype : 'forall' list[tvar] '.' type { [TForall, $2, $4] }
+        |  arrowtype  { $1 }
+        ;  
+  
+
+arrowtype : type '->' toptype { [TArrow, $1, $3] }
+          | type { $1 }
+          ;
+        
+calltype : calltype type { [TApp, $1, $2] }
+         | type          { $1 }
+         ;
+
+nameStr : <name> { $1.value };
+
+type : tvar { $1 }
+     | '(' sep_list[',', toptype] ')' { mk_tuple(TTuple, $2) }
+     | '{' toptype '}' { [TImplicit, $2] }
+     | <str> { [TSym, parse_str($1.value)] }
+     | '@' <name> { [TNew, $2.value] }
+     | type '?' '(' nameStr ')'   { [TQuery, $3, $1] }
+     ;
+
+
+declaration : 'val' <name> ':' toptype  
+            { [[DLoc, $1.lineno, $1.filename], [DAnn, $2.value, $4]] }
+          | 'let' <name> '=' expr
+            { [[DLoc, $1.lineno, $1.filename], [DBind, $2.value, $4]] }
+          | <name> '?' '(' nameStr ')'
+            { [[DLoc, $1.lineno, $1.filename], [DQuery, $4, $1.value]] }
+          ;
+
+
+expr : 'if' expr 'then' expr 'else' expr           
+       { [EITE, $2, $4, $6] }
+     | list[declaration] 'in' expr
+       { [ELet, concat($1), $3] }
+     | 'fun' <name> '->' expr
+       { [EFun, $2.value, $4] }
+     | call { $1 }
+     ;
+
+call : call atom { [EApp, $1, $2] }
+     | atom { $1 }
+     ;
+
+atom : 'extern' <str> { [EExt, [Expr, parse_str($2.value)]] }
+     | '(' sep_list[',', expr] ')'
+       { mk_tuple(ETup, $2) }
+     | '(' ')' { [ETup, []] }
+     | <int> { [EVal, int($1.value)] }
+     | <float> { [EVal, float($1.value)] }
+     | <name> { [EVar, $1.value] }
+     | <str> { [EVal, parse_str($1.value)] }
+     | atom '.' nameStr
+      { [EApp, [EVar, op_Getter], [EField, $1, $3]] }
+     | atom '?' '(' nameStr ')'
+      { [EQuery, $4, $1] }
+     ;
