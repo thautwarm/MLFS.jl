@@ -335,7 +335,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
                 eArm2 = arm2Prop(ti, localImplicits)
                 eCond = condProp(InstTo(boolT), localImplicits)
                 eI = IR.EITE(eCond, eArm1, eArm2)
-                IR.applyImplicits(eI, implicits, t, eI, localImplicits)
+                IR.applyImplicits(eI, implicits, t, ln, localImplicits)
             end
         end
 

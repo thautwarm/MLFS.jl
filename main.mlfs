@@ -11,4 +11,11 @@ let unit = unit
 val println : forall a. a -> unit
 let println = extern "println"
 
-let _ = println 1
+val eq : forall a. (a, a) -> bool
+let println = extern "=="
+
+let _ = println (
+  if eq (1, 2)
+  then 1
+  else 2
+)
