@@ -38,7 +38,7 @@ Usage
 1. Compile sources with signature files and produce new object files and signature files
 
     ```ocaml
-    mlfsc a.mlfs b.mlfs --sig "sig1.mlfsa,sig2.mlfsa" -name <pkgname>
+    mlfsc a.mlfs b.mlfs --sig "sig1.mlfsa,sig2.mlfsa" --name <pkgname>
     ```
 
     This produces `<pkgname>.mlfsa` and `<pkgname>.mlfso`.
