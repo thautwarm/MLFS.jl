@@ -15,6 +15,7 @@ Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 [compat]
 DataStructures = "~0.17.1, 0.18.0"
 FileIO = "1.4"
+JSON = "0.21"
 MLStyle = "0.4"
 PrettyPrint = "0.2"
 Setfield = "0.7"
