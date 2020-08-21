@@ -20,12 +20,12 @@ stmts = @surf_toplevel begin
     g = x -> y -> (y.a).?(aa)
 end
 
-mr = Surf.ModuleRecord(:main, [], stmts)
+mr = Surf.ModuleRecord(:a, [], stmts)
 open("a.mlfs", "w") do f
     write(f, JSON.json(toVec(Surf.ModuleRecord, mr)))
 end
 
-smlfsCompile([:A => "a.mlfs"], String[], "a")
+smlfsCompile(["a.mlfs"], String[], "a")
 
 
 open("a.mlfso") do f

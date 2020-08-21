@@ -70,7 +70,7 @@ const Signature = Pair{Vector{Symbol}, Vector{Pair{Nom, Vector{InstRec}}}}
 smlfs-c A=a.mlfs B=b.mlfs C=c.mlfs -sigdir -o pkgA
 """
 function smlfsCompile(
-    srcFiles::Vector{Pair{Symbol, Path}},
+    srcFiles::Vector{Path},
     sigFiles::Vector{Path},
     outName::String,
     outDir::String="./")
@@ -116,29 +116,29 @@ function loadSigs(sigFiles::Vector{Path}, loadedModules::Set{Symbol}, g::GlobalT
     end
 end
 
-function loadSrcs(srcFiles::Vector{Pair{Symbol, Path}}, loadedModules::Set{Symbol}, g::GlobalTC)
-    moduleNames = Symbol[moduleName for (moduleName, _) in srcFiles]
-    reloadedModules = intersect(loadedModules,  moduleNames)
-    isempty(reloadedModules) ||
-        error("module name conflicts: duplicate modules with the same names: $reloadedModules")
-    
+function loadSrcs(srcFiles::Vector{Path}, loadedModules::Set{Symbol}, g::GlobalTC)
     globalImplicitDeltas = g.globalImplicitDeltas
     decls = IR.Decl[]
-    
-    for (moduleName, each) in srcFiles
-        mR = open(each) do f
+    moduleNames = Symbol[]
+    for path in srcFiles
+        mR = open(path) do f
             srcCode = read(f, String)
             mR = fromVec(Surf.ModuleRecord, JSON.Parser.parse(srcCode))
             if mR === nothing
                 error("Invalid surface file at $path")
             end
             mR = mR.value
+            moduleName = mR.name
+            moduleName in loadedModules &&
+                error("module name conflicts: duplicate modules with the same names: $moduleName")
+            push!(loadedModules, moduleName)
+            push!(moduleNames, moduleName)
             append!(
                 decls,
-                loadModule(moduleName, mR.imports, mR.decls, each, g))
+                loadModule(moduleName, mR.imports, mR.decls, path, g))
         end
     end
-    
+
     prune = g.tcstate.prune
     pruneRel(x::InstRec) = begin
         x.isPruned || (x.t = prune(x.t))

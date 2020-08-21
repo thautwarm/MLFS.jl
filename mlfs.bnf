@@ -30,7 +30,7 @@ DBind = "DBind"
 DQuery = "DQuery"
 
 ELoc = "ELoc"
-EVar(Symbol)
+EVar = "EVar"
 EVal = "EVal"
 ELet = "ELet"
 EITE = "EITE"
@@ -42,6 +42,7 @@ EQuery = "EQuery"
 Expr = "Expr"
 op_Getter = 'op_Getter'
 ModuleRecord = "ModuleRecord"
+LineNumberNode = "LineNumberNode"
 
 def concat(xs):
   if len(xs) == 1:
@@ -64,17 +65,20 @@ sep_list[comma, p]
         | sep_list[comma, p] comma p { $1.append($3); $1 }
         ;
 
-START : <BOF> toplevel { $2 };
+START : <BOF> toplevel <EOF> { $2 };
 
 toplevel : 'module' nameStr
-           list[importName]
+           list[import]
            list[declaration]
-           { [ModuleRecord, $2, $3, $4] } ;
+           { [ModuleRecord, $2, $3, concat($4)] }
+          | 'module' nameStr
+           list[declaration]
+           { [ModuleRecord, $2, [], concat($3)] } ;
 
 import : 'import' nameStr 'as' nameStr
           { [$2, $4] }
        | 'import' nameStr
-          { [$2, importName($4)] }
+          { [$2, importName($2)] }
         ;
 
 tvar    : <name> { [TVar, $1.value] };
@@ -99,18 +103,17 @@ type : tvar { $1 }
      | '{' toptype '}' { [TImplicit, $2] }
      | <str> { [TSym, parse_str($1.value)] }
      | '@' <name> { [TNew, $2.value] }
-     | type '?' '(' nameStr ')'   { [TQuery, $3, $1] }
+     | '?' type 'as' nameStr   { [TQuery, $4, $2] }
      ;
 
 
 declaration : 'val' <name> ':' toptype  
-            { [[DLoc, $1.lineno, $1.filename], [DAnn, $2.value, $4]] }
+            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DAnn, $2.value, $4]] }
           | 'let' <name> '=' expr
-            { [[DLoc, $1.lineno, $1.filename], [DBind, $2.value, $4]] }
-          | <name> '?' '(' nameStr ')'
-            { [[DLoc, $1.lineno, $1.filename], [DQuery, $4, $1.value]] }
+            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DBind, $2.value, $4]] }
+          | 'check' nameStr 'as' nameStr
+            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DQuery, $4, $2]] }
           ;
-
 
 expr : 'if' expr 'then' expr 'else' expr           
        { [EITE, $2, $4, $6] }
@@ -135,6 +138,6 @@ atom : 'extern' <str> { [EExt, [Expr, parse_str($2.value)]] }
      | <str> { [EVal, parse_str($1.value)] }
      | atom '.' nameStr
       { [EApp, [EVar, op_Getter], [EField, $1, $3]] }
-     | atom '?' '(' nameStr ')'
-      { [EQuery, $4, $1] }
+     | '?'  atom 'as' nameStr
+      { [EQuery, $4, $2] }
      ;

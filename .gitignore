@@ -4,3 +4,6 @@
 /docs/build/
 .history/
 Manifest.toml
+*.mlfsa
+*.mlfso
+*.mlfsf

@@ -27,6 +27,10 @@ toVec(::Type{Integer}, a::A) where A <: Signed = ["int", sizeof(a), string(a)]
 toVec(::Type{Integer}, a::A) where A <: Unsigned = ["uint", sizeof(a), string(a)]
 toVec(::Type{AbstractFloat}, a::A) where A <: AbstractFloat = ["float", sizeof(a), string(a)]
 
+function fromVec(::Type{Integer}, a::Integer)
+    Some(a)
+end
+
 function fromVec(::Type{Integer}, a::Vector)
     tag = a[1]
     tag in ("int", "uint") || return nothing
@@ -59,6 +63,9 @@ function fromVec(::Type{Integer}, a::Vector)
     end
 end
 
+function fromVec(::Type{AbstractFloat}, a::AbstractFloat)
+    Some(a)
+end
 function fromVec(::Type{AbstractFloat}, a::Vector)
     tag = a[1]
     tag == "float" || return nothing
