@@ -28,6 +28,7 @@ DAnn = "DAnn"
 DLoc = "DLoc"
 DBind = "DBind"
 DQuery = "DQuery"
+DOpen = "DOpen"
 
 ELoc = "ELoc"
 EVar = "EVar"
@@ -55,6 +56,9 @@ def concat(xs):
 
 def importName(x):
   return x.split('.')[-1]
+
+def inc(x):
+  return x + 1
 %%
 
 list[p] : p         { [$1] }
@@ -107,13 +111,15 @@ type : tvar { $1 }
      | '?' type 'as' nameStr   { [TQuery, $4, $2] }
      ;
 
-
 declaration : 'val' <name> ':' toptype  
-            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DAnn, $2.value, $4]] }
+            { [[DLoc, [LineNumberNode, inc($1.lineno), $1.filename]], [DAnn, $2.value, $4]] }
           | 'let' <name> '=' expr
-            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DBind, $2.value, $4]] }
+            { [[DLoc, [LineNumberNode, inc($1.lineno), $1.filename]], [DBind, $2.value, $4]] }
           | 'check' nameStr 'as' nameStr
-            { [[DLoc, [LineNumberNode, $1.lineno, $1.filename]], [DQuery, $4, $2]] }
+            { [[DLoc, [LineNumberNode, inc($1.lineno), $1.filename]], [DQuery, $4, $2]] }
+          | 'open' expr
+            { [[DLoc, [LineNumberNode, inc($1.lineno), $1.filename]], [DOpen, $2]] }
+
           ;
 
 expr : 'if' expr 'then' expr 'else' expr           
@@ -138,7 +144,7 @@ atom : 'extern' <str> { [EExt, [Expr, parse_str($2.value)]] }
      | <name> { [EVar, $1.value] }
      | <str> { [EVal, parse_str($1.value)] }
      | atom '.' nameStr
-      { [EApp, [EVar, op_Getter], [EField, $1, $3]] }
+      { [EField, $1, $3] }
      | '?'  atom 'as' nameStr
       { [EQuery, $4, $2] }
      ;

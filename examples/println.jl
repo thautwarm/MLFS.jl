@@ -1,9 +1,17 @@
 let
     #= line 1 =#
-    var"|Println|b_unit"::Type = Type::Type
+    var"|Println|b_unit"::Symbol = Symbol("unit@2_|Println|c")::Symbol
     var"|Println|d_println"::Function = println::Function
     (var"|Println|d_println"::Function)("hello!"::String)::Any
-    var"|Println|"::Tuple = ()
-    Println::Tuple = (("Type", "f16", "i64", "i32", "str", "f64", "i16", "bool", "unit", "field", "module", "char", "println", "fieldnames", "i8", "f32"), (Type, Type, Type, Type, Type, Type, Type, Type, Type, Type, Type, Type, var"|Println|d_println", Type, Type, Type))
+    var"|Println|e"::Function = function (_,)
+            #= ../examples/println.mlfsf:1 =#
+            var"|Println|d_println"
+        end
+    var"|Println|f"::Function = function (_,)
+            #= ../examples/println.mlfsf:1 =#
+            Symbol("unit@2_|Println|c")
+        end
+    var"|Println|"::Any = Symbol("Module Println")
+    Println::Any = Symbol("namespace {Module Println, {{unit, |Println|b_unit, Type unit@2_|Println|c}, {println, |Println|d_println, forall a@5845762930483150777.a@5845762930483150777->unit@2_|Println|c}}}")
     0
 end

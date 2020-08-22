@@ -34,6 +34,7 @@ end
 
 @data Decl begin
     DAnn(Symbol, TyExpr)
+    DOpen(Expr)
     DLoc(LineNumberNode)
     DBind(Symbol, Expr)
     DQuery(String, Symbol)
@@ -41,11 +42,11 @@ end
 
 @typedIO Decl = begin
     DAnn(Symbol, TyExpr)
+    DOpen(Expr)
     DLoc(LineNumberNode)
     DBind(Symbol, Expr)
     DQuery(String, Symbol)
 end
-
 
 @data Expr begin
     ELoc(LineNumberNode, Expr)

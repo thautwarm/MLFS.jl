@@ -122,12 +122,12 @@ fromVec(::Type{Bool}, x::Bool) = Some(x)
 
 toVec(::Type{Pair{A, B}}, x::Pair) where {A, B} = [toVec(A, x.first), toVec(B, x.second)]
 function fromVec(::Type{Pair{A, B}}, x::Vector) where {A, B}
-    length(x) === 2 && return nothing
+    length(x) === 2 || return nothing
     l = fromVec(A, x[1])
     l === nothing && return nothing
-    r = fromVec(A, x[2])
+    r = fromVec(B, x[2])
     r === nothing && return nothing
-    Pair{A, B}(l.value, r.value)
+    Some(Pair{A, B}(l.value, r.value))
 end
 
 toVec(::Type{Vector{E}}, x::Vector) where E = [toVec(E, each) for each in x]

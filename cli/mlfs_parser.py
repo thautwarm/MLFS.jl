@@ -218,30 +218,13 @@ def mk_parser():
                 rbnf_tmp_2 = lcl_2
                 lcl_2 = []
                 _rbnf_immediate_lst = lcl_2
-                _rbnf_immediate_lst.append(EApp)
-                lcl_2 = _rbnf_immediate_lst
-                lcl_3 = []
-                _rbnf_immediate_lst = lcl_3
-                _rbnf_immediate_lst.append(EVar)
-                lcl_3 = _rbnf_immediate_lst
-                _rbnf_immediate_lst = lcl_3
-                _rbnf_immediate_lst.append(op_Getter)
-                lcl_3 = _rbnf_immediate_lst
-                _rbnf_immediate_lst = lcl_2
-                _rbnf_immediate_lst.append(lcl_3)
-                lcl_2 = _rbnf_immediate_lst
-                lcl_3 = []
-                _rbnf_immediate_lst = lcl_3
                 _rbnf_immediate_lst.append(EField)
-                lcl_3 = _rbnf_immediate_lst
-                _rbnf_immediate_lst = lcl_3
-                _rbnf_immediate_lst.append(rbnf_tmp_0)
-                lcl_3 = _rbnf_immediate_lst
-                _rbnf_immediate_lst = lcl_3
-                _rbnf_immediate_lst.append(rbnf_tmp_2)
-                lcl_3 = _rbnf_immediate_lst
+                lcl_2 = _rbnf_immediate_lst
                 _rbnf_immediate_lst = lcl_2
-                _rbnf_immediate_lst.append(lcl_3)
+                _rbnf_immediate_lst.append(rbnf_tmp_0)
+                lcl_2 = _rbnf_immediate_lst
+                _rbnf_immediate_lst = lcl_2
+                _rbnf_immediate_lst.append(rbnf_tmp_2)
                 lcl_2 = _rbnf_immediate_lst
                 rbnf_tmp_1_ = lcl_2
                 lcl_2 = (True, rbnf_tmp_1_)

@@ -15,6 +15,6 @@ let
                     end::Function
             end::Function
     var"|a|"::Tuple = ()
-    a::Tuple = (("i64", "i32", "op_Getter", "str", "i16", "bool", "x", "module", "field", "char", "fieldnames", "g", "i8", "f"), (Type, Type, var"|a|b_op_Getter", Type, Type, Type, var"|a|d_x", Type, Type, Type, Type, var"|a|e_g", Type, var"|a|c_f"))
+    a::Tuple = (("f32", "f16", "i64", "i32", "op_Getter", "str", "f64", "bool", "i16", "x", "module", "field", "char", "fieldnames", "g", "i8", "f", "Type"), (Type, Type, Type, Type, var"|a|b_op_Getter", Type, Type, Type, Type, var"|a|d_x", Type, Type, Type, Type, var"|a|e_g", Type, var"|a|c_f", Type))
     0
 end

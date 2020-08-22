@@ -23,27 +23,3 @@ function tyErase(hm::HMT)
         Implicit(t) => tyErase(t)
     end
 end
-
-function erasedToJuliaTy(e::ErasedType)
-    ! = erasedToJuliaTy
-    @match e begin
-        ERArrow(a, r) => :Function
-        ERNom(name) =>
-            @match name begin
-                :int64 => :Int64
-                :int32 => :Int32
-                :int16 => :Int16
-                :int8 => :Int8
-                :float16 => :Float16
-                :float32 => :Float32
-                :float64 => :Float64
-                :bool => :Bool
-                :str => :String
-                :char => :Char
-                _ => :Any
-            end
-        ERTuple(xs) => :Tuple
-        ERType(t) => :Type
-        ERAny => :Any
-    end
-end

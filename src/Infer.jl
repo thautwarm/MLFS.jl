@@ -71,7 +71,7 @@ const _InferPostponed = CFunc{IR.Decl, Tuple{}}
 
 function inferModule(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
     props, localTC = inferDecls(globalTC, localTC, decls, Val(true))
-    [f() for f in props], localTC
+    IR.Decl[f() for f in props], localTC
 end
 
 function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Decl})
@@ -96,6 +96,36 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
         @case Surf.DLoc(ln)
             localTC = @set localTC.ln = ln
             nothing
+        @case Surf.DOpen(exp)
+            let exprTyProp = inferExpr(globalTC, localTC, exp),
+                ex = exprTyProp(NoProp, localTC.localImplicits),
+                tcstate = globalTC.tcstate,
+                namespaceTy = tcstate.new_tvar(),
+                target = App(Nom(:namespace), Tup(HMT[ex.ty, namespaceTy])),
+                (fromTy, _) = instanceResolveAndType(
+                    globalTC, localTC.localImplicits, target, localImplicits.ln)
+
+                unifyImplicits!(target, fromTy, HMT[]) || throw(MLError(ln, UnificationFail))
+
+                namespaceTy = tcstate.prune(namespaceTy)
+                @match namespaceTy begin
+                    Tup(fields) =>
+                        for field in fields
+                            @match field begin
+                                Tup([Nom(name), Nom(gensym), t]) =>
+                                    begin
+                                        localTC = @set localTC.symmap = localTC.symmap[name => gensym]
+                                        localTC = @set localTC.typeEnv = localTC.typeEnv[name => t]
+                                    end
+                                _ => error(MLError(localTC.ln, InvalidNamespaceType(namespaceTy)))
+                            end
+                        end
+                    _ => error(MLError(localTC.ln, InvalidNamespaceType(namespaceTy)))
+                end
+                IR.Perform(ex)
+            end
+
+            
         @case Surf.DAnn(sym, tyExpr)
             haskey(annotated, sym) && throw(MLError(localTC.ln, UnusedAnnotation(sym)))
             gensym = Symbol(symgen(globalTC), :_, sym)
@@ -241,14 +271,17 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
 
         exprTyProp = inferExpr(globalTC, localTC, subject)
         function propField(ti::TypeInfo, localImplicits::InstResolCtx)
-            local eSub, retTV, retT, eRet, lhs
+            local eSub, retTV, retT, eRet, op_Getter
             eSub = exprTyProp(NoProp, localImplicits)
             retTV = new_tvar()
             target = App(Nom(:field), Tup(HMT[eSub.ty, Nom(field), retTV]))
             retT, eAccess = instanceResolveAndType(globalTC, localImplicits, target, ln)
             unifyImplicits!(target, retT, HMT[]) || throw(MLError(ln, UnificationFail))
-            retT, implicits = applyTI(ti, target)
-            IR.applyImplicits(IR.EApp(eAccess, eSub), implicits, retT, ln, localImplicits)
+            retTV, implicits = applyTI(ti, retTV)
+            
+            op_Getter = IR.Expr(ln, nothing, IR.EVar(:op_Getter))
+            eRet = IR.EApp(IR.Expr(ln, nothing, IR.EApp(op_Getter, eAccess)), eSub)
+            IR.applyImplicits(eRet, implicits, retTV, ln, localImplicits)
         end
 
     @case Surf.ETup(xs)
@@ -357,17 +390,17 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
         n in localTC.typeEnv || throw(MLError(localTC.ln, UnboundVar(n)))
         varT = prune(localTC.typeEnv[n])
         @match varT begin
-            T(_) && t =>
+            T(t) =>
                 function propTVar(ti::TypeInfo, _::InstResolCtx)
                     @match ti begin
                         InstTo(t′) =>
                             begin
-                                unify(t′, t) || throw(MLError(ln, UnificationFail))
+                                unify(t′, varT) || throw(MLError(ln, UnificationFail))
                             end
                         _ => nothing
                     end
 
-                    IR.Expr(ln, t, IR.ETypeVal(t))
+                    IR.Expr(ln, varT, IR.ETypeVal(t))
                 end
             _ =>
                 let gensym = localTC.symmap[n]

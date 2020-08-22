@@ -64,9 +64,9 @@ const preDefinedTypeEnv = Store{Symbol, HMT}()[[
         :i16, :i32, :i64,
         :f16, :f32, :f64,
         :char, :str, :bool,
-        :module,
+        :Module,
         :field,
-        :fieldnames,
+        :namespace,
         :Type
     ]
 ]]
@@ -110,7 +110,7 @@ end
 
 
 const FieldClass = Nom(:field)
-const FieldNamesClass = Nom(:fieldnames)
+const NamespaceClass = Nom(:namespace)
 
 function loadSigs(sigFiles::Vector{Path}, loadedModules::Set{Symbol}, g::GlobalTC)
     for each in sigFiles
@@ -181,7 +181,7 @@ function loadModule(
     l = empty(LocalTC)
     l = @set l.typeEnv = preDefinedTypeEnv
     for (importModule, alias) in imports
-        moduleType = App(Nom(:module), Nom(importModule))
+        moduleType = App(Nom(:Module), Nom(importModule))
         l = @set l.typeEnv = l.typeEnv[alias => moduleType]
         l = @set l.symmap = l.symmap[alias => moduleGensym(importModule)]
     end
@@ -195,7 +195,7 @@ function loadModule(
     globalImplicitDeltas = g.globalImplicitDeltas
     get!(globalImplicitDeltas, FieldClass, 0)
     
-    moduleType = App(Nom(:module), Nom(moduleName))
+    moduleType = App(Nom(:Module), Nom(moduleName))
     
     function mkField(usersym::Symbol, genexp::ExprImpl, pruned_type::HMT)
         local instanceTy
@@ -204,68 +204,54 @@ function loadModule(
         push!(globalImplicits, InstRec(instanceTy, ln, genexp, true))
     end
 
-    fields = Dict{Symbol, Tuple{HMT, IR.ExprImpl}}()
+    fields = Dict{Symbol, Tuple{Gensym, HMT}}()
     for (usersym, type) in localTC.typeEnv.unbox
-        if haskey(fields, usersym)
+        if haskey(fields, usersym) || type === get(preDefinedTypeEnv, usersym, nothing)
             # shadowing
             continue
         end
+    
         gensym = get(localTC.symmap, usersym, nothing)
+        method_gensym = symgen(g)
         type = prune(type)
         genexp = @match type begin
-            T(_) => IR.ETypeVal(type)
+            T(type) => IR.ETypeVal(type)
             
             # TODO: what does this mean?
             if gensym === nothing end => IR.EInt(0, 8)
 
             _ => IR.EVar(gensym::Symbol)
         end
-        fields[usersym] = (type, genexp)
-        
-        mkField(usersym, genexp, prune(type))
+        fields[usersym] = (gensym, type)
+        genexp = IR.Expr(ln, nothing, IR.EFun(:_, IR.Expr(ln, nothing, genexp)))
+        push!(results, IR.Assign(method_gensym, Arrow(HM.⊤, type), genexp))
+        mkField(usersym, IR.EVar(method_gensym), prune(type))
     end
     globalImplicitDeltas[FieldClass] += length(fields)
 
-    globalImplicits = get!(g.globalImplicits, FieldNamesClass) do
+    globalImplicits = get!(g.globalImplicits, Nom(:Module)) do
+        InstRec[]
+    end
+    push!(globalImplicits, InstRec(moduleType, ln, IR.ETypeVal(moduleType), true))
+
+    get!(globalImplicitDeltas, Nom(:Module), 0)
+    globalImplicitDeltas[Nom(:Module)] += 1
+
+    globalImplicits = get!(g.globalImplicits, NamespaceClass) do
         InstRec[]
     end
 
-    get!(globalImplicitDeltas, FieldNamesClass, 0)
+    get!(globalImplicitDeltas, NamespaceClass, 0)
     instanceTy = App(
-        FieldNamesClass,
+        NamespaceClass,
         Tup(
             HMT[
                 moduleType,
-                Tup(HMT[Nom(k) for (k, _) in fields])]))
+                Tup(HMT[Tup([Nom(k), Nom(gensym), t]) for (k, (gensym, t)) in fields])]))
 
     
     push!(globalImplicits, InstRec(instanceTy, ln, IR.ETypeVal(instanceTy), true))
-    globalImplicitDeltas[FieldNamesClass] += 1
-    push!(
-        results,
-        IR.Assign(moduleGensym(moduleName), Tup(HMT[]), IR.Expr(ln, nothing, IR.ETup([]))),
-        IR.Assign(
-            moduleExportName(moduleName),
-            Tup(
-              HMT[
-                Tup(HMT[strT for _ in fields])
-              , Tup(HMT[prune(t) for (_, (t, _)) in fields])
-              ]),
-            IR.Expr(ln, nothing,
-            IR.ETup([
-                IR.Expr(ln, nothing,
-                IR.ETup(
-                [
-                    IR.Expr(ln, nothing, IR.EStr(string(k)))
-                    for (k, _) in fields
-                ])),
-                IR.Expr(ln, nothing,
-                IR.ETup(
-                [
-                    IR.Expr(ln, nothing, e)
-                    for (_, (_, e)) in fields
-                ]))
-            ]))))
+    globalImplicitDeltas[NamespaceClass] += 1
 
     # type class, etc
     postInfer = mkPostInfer(g)
@@ -273,5 +259,11 @@ function loadModule(
         results[i] = postInfer(ln, results[i])
     end
 
+    push!(results,
+        IR.Assign(moduleGensym(moduleName), moduleType, 
+            IR.Expr(ln, nothing, IR.ETypeVal(moduleType))),
+        IR.Assign(moduleExportName(moduleName), instanceTy,
+            IR.Expr(ln, nothing, IR.ETypeVal(instanceTy))),
+    )
     results
 end

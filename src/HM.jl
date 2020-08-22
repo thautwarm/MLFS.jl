@@ -60,6 +60,10 @@ Base.show(io::IO, unique_name::UN) =
     Implicit(HMT)
 end
 
+⊤ = let a = UN(:a)
+    Forall([a], Bound(a))
+end
+
 @typedIO Nom(Symbol)
 
 @typedIO HMT = begin

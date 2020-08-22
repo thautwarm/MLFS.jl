@@ -18,6 +18,7 @@ export TypeVarEscape
     DuplicateInstanceError(Vector{InstRec})
     InstanceNotFound(HMT)
     UnsolvedTypeVariables(Set{Var})
+    InvalidNamespaceType(HMT)
 
     RecursiveType
     UnificationFail
