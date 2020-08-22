@@ -28,7 +28,7 @@ let CanAdd1 = CanAdd1
 val int_add1 : { Type CanAdd1 -> i64 -> i64 }
 let int_add1 = extern "_ -> (x::Int64) -> x + 1"
 
-val float_add1 : { Type CanAdd1 -> f64 -> f64 }
+val float_add1 : { Type CanAdd1 -> i64 -> i64 }
 let float_add1 = extern "_ -> (x::Float64) -> x + 1.0"
 
 val vec_head_add1 : forall a. { Type CanAdd1 -> a -> a } -> Vec a -> a

@@ -27,7 +27,7 @@ function instanceResolve(
         else
             throw(MLError(
                 ln,
-                DuplicateInstanceError(candicates)))
+                DuplicateInstanceError([a.first for a in candicates])))
         end
     end
 
@@ -54,7 +54,7 @@ function instanceResolve(
         else
             throw(MLError(
                 ln,
-                DuplicateInstanceError(candicates)))
+                DuplicateInstanceError([a.first for a in candicates])))
         end
     end
 
@@ -91,7 +91,7 @@ end
     else
         throw(MLError(
             ln,
-            DuplicateInstanceError(candicates)))
+            DuplicateInstanceError([a.first for a in candicates])))
     end
 end
 
@@ -110,6 +110,7 @@ for i in eachindex(globalImplicits)
         push!(candicates, rec => evidences)
     end
 end
+
 !isempty(candicates) && begin
     if length(candicates) === 1
         rec, evidences = candicates[1]
@@ -118,7 +119,7 @@ end
     else
         throw(MLError(
             ln,
-            DuplicateInstanceError(candicates)))
+            DuplicateInstanceError([a.first for a in candicates])))
     end
 end
 
