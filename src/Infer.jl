@@ -61,7 +61,7 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
         T(x) => x
         _ => begin
             targ = new_tvar()
-            unify(T(targ), x) || throw(MLError(ln, UnificationFail))
+            unify(T(targ), typetype) || throw(MLError(ln, UnificationFail))
             prune(targ)
         end
     end
@@ -103,9 +103,9 @@ function inferDecls(globalTC::GlobalTC, localTC::LocalTC, decls::Vector{Surf.Dec
                 namespaceTy = tcstate.new_tvar(),
                 target = App(Nom(:namespace), Tup(HMT[ex.ty, namespaceTy])),
                 (fromTy, _) = instanceResolveAndType(
-                    globalTC, localTC.localImplicits, target, localImplicits.ln)
+                    globalTC, localTC.localImplicits, target, localTC.ln)
 
-                unifyImplicits!(target, fromTy, HMT[]) || throw(MLError(ln, UnificationFail))
+                tcstate.unifyImplicits!(target, fromTy, HMT[]) || throw(MLError(ln, UnificationFail))
 
                 namespaceTy = tcstate.prune(namespaceTy)
                 @match namespaceTy begin
@@ -230,7 +230,7 @@ function inferExpr(globalTC::GlobalTC, localTC::LocalTC, expr::Surf.Expr)
             InstTo(instTy) => begin
                 unifyImplicits!(instTy, me, implicits) || begin
                     # @info :UNIFY_FAIL prune(instTy) prune(me)
-                    throw(MLError(ln, UnificationFail))
+                    throw(MLError(ln, UnificationFailOf(prune(instTy), prune(me))))
                 end
                 (instTy, implicits)
             end

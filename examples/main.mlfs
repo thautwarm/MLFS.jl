@@ -1,6 +1,17 @@
 module main
 import Prim
 
+let Vec = Prim.Vec
 
 let _ = Prim.println 1
 let _ = Prim.println i64
+
+
+open Prim
+let a = make Vec
+
+check a as a_type
+
+let c = a.push 1
+
+check c as aa

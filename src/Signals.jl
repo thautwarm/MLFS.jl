@@ -19,6 +19,7 @@ export TypeVarEscape
     InstanceNotFound(HMT)
     UnsolvedTypeVariables(Set{Var})
     InvalidNamespaceType(HMT)
+    UnificationFailOf(HMT, HMT)
 
     RecursiveType
     UnificationFail

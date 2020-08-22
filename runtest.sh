@@ -6,6 +6,10 @@
 
 cd examples
 
+mlfsc ../examples/prim.mlfs ../examples/main.mlfs --o ../out/m4 --name main_import_prim
+mlfsc ../out/m4 --o ./main_import_prim.jl
+julia main_import_prim.jl
+
 mlfsc ../examples/records.mlfs --o ../out/m1 --name records
 mlfsc ../out/m1 --o ./records.jl
 julia records.jl
@@ -17,6 +21,3 @@ julia println.jl
 
 mlfsc ../examples/functor.mlfs --o ../out/m3 --name functor
 
-mlfsc ../examples/prim.mlfs ../examples/main.mlfs --o ../out/m4 --name main_import_prim
-mlfsc ../out/m4 --o ./main_import_prim.jl
-julia main_import_prim.jl

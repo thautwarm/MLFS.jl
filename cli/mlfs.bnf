@@ -104,6 +104,7 @@ calltype : calltype type { [TApp, $1, $2] }
 nameStr : <name> { $1.value };
 
 type : tvar { $1 }
+     | '(' ')'                        { [TTuple, []] }
      | '(' sep_list[',', toptype] ')' { mk_tuple(TTuple, $2) }
      | '{' toptype '}' { [TImplicit, $2] }
      | <str> { [TSym, parse_str($1.value)] }

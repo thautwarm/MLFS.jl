@@ -3,8 +3,21 @@ module Prim
 val op_Getter : forall a b c. field (a, b, c) -> a -> c
 let op_Getter = extern "function op_Getter(x) function (a) x(a) end end"
 
-val unit : Type @unit
+val unit : Type ()
 let unit = unit
 
+
+val Vec : Type @Type
+let Vec = Vec
+
+val make : forall t a. {Type t -> t a} -> Type t -> t a 
+let make = fun t -> t
+
+val mkVec : {forall a. Type Vec -> Vec a}
+let mkVec = extern "(_) -> []"
+
+val pushVec : {forall a. field (Vec a, "push", a -> unit)}
+let pushVec = extern "x -> function (a) push!(x, a); () end"
+
 val println : forall a. a -> unit
-let println = extern "println"
+let println = extern "function (x) println(x); () end"
