@@ -1,0 +1,10 @@
+module Prim
+
+val op_Getter : forall a b c. field (a, b, c) -> a -> c
+let op_Getter = extern "function op_Getter(x) function (a) x(a) end end"
+
+val unit : Type @unit
+let unit = unit
+
+val println : forall a. a -> unit
+let println = extern "println"

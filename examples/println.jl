@@ -12,6 +12,6 @@ let
             Symbol("unit@2_|Println|c")
         end
     var"|Println|"::Any = Symbol("Module Println")
-    Println::Any = Symbol("namespace {Module Println, {{unit, |Println|b_unit, Type unit@2_|Println|c}, {println, |Println|d_println, forall a@5845762930483150777.a@5845762930483150777->unit@2_|Println|c}}}")
+    Println::Any = Symbol("namespace {Module Println, {{unit, |Println|b_unit, Type unit@2_|Println|c}, {println, |Println|d_println, forall a@3969951505981550862.a@3969951505981550862->unit@2_|Println|c}}}")
     0
 end

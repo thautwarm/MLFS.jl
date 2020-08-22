@@ -1,0 +1,6 @@
+module main
+import Prim
+
+
+let _ = Prim.println 1
+let _ = Prim.println i64
