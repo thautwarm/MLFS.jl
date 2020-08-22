@@ -18,5 +18,21 @@ let mk2 = fun x -> (x, x)
 
 let _ = println (? (mk2 a) as mk2a)
 
-val int_vec_add1 : i64 -> i64
-let int_vec_add1 = fun x -> x
+val index : forall a. Vec a -> i64 -> a
+let index = extern "(x::Vector) -> (i::Int64) -> x[i]"
+
+val CanAdd1 : Type @CanAdd1
+let CanAdd1 = CanAdd1
+
+
+val int_add1 : { Type CanAdd1 -> i64 -> i64 }
+let int_add1 = extern "_ -> (x::Int64) -> x + 1"
+
+val float_add1 : { Type CanAdd1 -> f64 -> f64 }
+let float_add1 = extern "_ -> (x::Float64) -> x + 1.0"
+
+val vec_head_add1 : forall a. { Type CanAdd1 -> a -> a } -> Vec a -> a
+let vec_head_add1 = fun instance -> 
+    fun x -> instance CanAdd1 (index x 1)
+    
+let _ = println( vec_head_add1  a )
