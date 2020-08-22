@@ -7,7 +7,7 @@ val unit : Type ()
 let unit = unit
 
 
-val Vec : Type @Type
+val Vec : Type @Vec
 let Vec = Vec
 
 val make : forall t a. {Type t -> t a} -> Type t -> t a 

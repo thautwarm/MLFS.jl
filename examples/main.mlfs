@@ -1,13 +1,10 @@
 module main
 import Prim
-
-let Vec = Prim.Vec
-
-let _ = Prim.println 1
-let _ = Prim.println i64
-
-
 open Prim
+
+let _ = println 1
+let _ = println i64
+
 let a = make Vec
 
 check a as a_type
@@ -15,3 +12,11 @@ check a as a_type
 let c = a.push 1
 
 check c as aa
+
+val mk2 : forall a. a -> (a, a)
+let mk2 = fun x -> (x, x)
+
+let _ = println (? (mk2 a) as mk2a)
+
+val int_vec_add1 : i64 -> i64
+let int_vec_add1 = fun x -> x

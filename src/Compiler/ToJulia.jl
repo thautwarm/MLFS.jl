@@ -6,13 +6,13 @@ function erasedToJuliaTy(e::ErasedType)
         ERArrow(a, r) => :Function
         ERNom(name) =>
             @match name begin
-                :int64 => :Int64
-                :int32 => :Int32
-                :int16 => :Int16
-                :int8 => :Int8
-                :float16 => :Float16
-                :float32 => :Float32
-                :float64 => :Float64
+                :i64 => :Int64
+                :i32 => :Int32
+                :i16 => :Int16
+                :i8 => :Int8
+                :f16 => :Float16
+                :f32 => :Float32
+                :f64 => :Float64
                 :bool => :Bool
                 :str => :String
                 :char => :Char
