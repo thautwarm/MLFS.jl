@@ -35,8 +35,6 @@ function inferType(globalTC::GlobalTC, localTC::LocalTC, exp::Surf.TyExpr)::HMT
         T(Tup(HMT[inferType(globalTC, localTC, arg) for arg in args]))
 
     @case Surf.TForall(tvars, p)
-        any(tvars) do s; s isa Symbol end ||
-            throw(MLError(ln, InvalidSyntax("$exp")))
         let typeEnv = localTC.typeEnv
 
             uniqueNames = UN[UN(k) for k in tvars]
