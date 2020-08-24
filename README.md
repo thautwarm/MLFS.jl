@@ -24,6 +24,8 @@ This repo is an implementation of MLFS type system with
 
 1. install Julia: there is an one-liner option for all operating system:
 
+    
+    https://github.com/johnnychen94/jill.py or
     https://github.com/abelsiqueira/jill
 
 2. develop this package
